@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.foodbike.MenuController"
+            style="-fx-background-color: #f5f5f5;">
+    <top>
+        <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
+            <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
+                <Label fx:id="restaurantNameLabel" style="-fx-font-size: 22; -fx-text-fill: #ffffff; -fx-font-weight: bold;"/>
+                <Region prefWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                <Button text="Back" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #34495e; -fx-text-fill: white; -fx-border-radius: 4;" onAction="#handleBack"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <HBox spacing="20" style="-fx-padding: 20;">
+            <!-- Menu Items List -->
+            <VBox spacing="10" style="-fx-min-width: 500; -fx-max-width: 600;" HBox.hgrow="ALWAYS">
+                <Label text="Menu Items" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                <ScrollPane style="-fx-padding: 0; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                    <VBox fx:id="menuItemsVBox" spacing="10" style="-fx-padding: 10;"/>
+                </ScrollPane>
+            </VBox>
+
+            <!-- Order Summary -->
+            <VBox spacing="15" style="-fx-padding: 15; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-min-width: 300; -fx-max-width: 350;">
+                <Label text="Order Summary" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                
+                <ScrollPane style="-fx-padding: 0; -fx-border-color: transparent; -fx-fit-to-width: true;" VBox.vgrow="ALWAYS">
+                    <VBox fx:id="selectedItemsVBox" spacing="10" style="-fx-padding: 10;"/>
+                </ScrollPane>
+
+                <Separator/>
+
+                <HBox spacing="10" style="-fx-padding: 10 0;">
+                    <Label text="Total:" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                    <Region prefWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="totalLabel" text="$0.00" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #27ae60;"/>
+                </HBox>
+
+                <Button text="Confirm Order" style="-fx-padding: 12; -fx-font-size: 14; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4; -fx-cursor: hand;" onAction="#handleConfirmOrder"/>
+                <Button text="Clear Order" style="-fx-padding: 12; -fx-font-size: 14; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4; -fx-cursor: hand;" onAction="#handleClearOrder"/>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

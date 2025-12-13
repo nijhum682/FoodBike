@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane style="-fx-background-color: #f5f5f5;" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="com.example.foodbike.AdminController">
+    <top>
+        <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
+            <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
+                <Label style="-fx-font-size: 28; -fx-text-fill: #ffffff; -fx-font-weight: bold;" text="FoodBike" />
+                <Label style="-fx-font-size: 16; -fx-text-fill: #bdc3c7;" text="Admin Dashboard" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#handleLogout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" text="Logout" />
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="20" style="-fx-padding: 20;">
+            <HBox spacing="10">
+                <Button onAction="#handleAddRestaurant" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="Add Restaurant">
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin></Button>
+                <Button onAction="#handleViewRestaurants" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="View All Restaurants">
+               <HBox.margin>
+                  <Insets left="600.0" />
+               </HBox.margin></Button>
+            </HBox>
+
+            <TableView fx:id="restaurantsTable" style="-fx-font-size: 12;">
+                <columns>
+                    <TableColumn prefWidth="150" text="Restaurant ID" />
+                    <TableColumn prefWidth="150" text="Name" />
+                    <TableColumn prefWidth="150" text="Division" />
+                    <TableColumn prefWidth="200" text="Address" />
+                    <TableColumn prefWidth="150" text="Actions" />
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+</BorderPane>

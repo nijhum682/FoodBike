@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.foodbike.EntrepreneurController"
+            style="-fx-background-color: #f5f5f5;">
+    <top>
+        <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
+            <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
+                <Label text="FoodBike" style="-fx-font-size: 28; -fx-text-fill: #ffffff; -fx-font-weight: bold;"/>
+                <Label text="Entrepreneur Dashboard" style="-fx-font-size: 16; -fx-text-fill: #bdc3c7;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="userLabel" style="-fx-font-size: 14; -fx-text-fill: #ffffff;"/>
+                <Button text="Logout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" onAction="#handleLogout"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="20" style="-fx-padding: 20;">
+            <TabPane style="-fx-font-size: 12;">
+                <Tab text="Pending Orders" closable="false">
+                    <TableView fx:id="pendingOrdersTable" style="-fx-font-size: 12;">
+                        <columns>
+                            <TableColumn text="Order ID" prefWidth="150"/>
+                            <TableColumn text="Customer" prefWidth="150"/>
+                            <TableColumn text="Items" prefWidth="200"/>
+                            <TableColumn text="Total" prefWidth="100"/>
+                            <TableColumn text="Status" prefWidth="100"/>
+                            <TableColumn text="Action" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+                </Tab>
+
+                <Tab text="Confirmed Orders" closable="false">
+                    <TableView fx:id="confirmedOrdersTable" style="-fx-font-size: 12;">
+                        <columns>
+                            <TableColumn text="Order ID" prefWidth="150"/>
+                            <TableColumn text="Customer" prefWidth="150"/>
+                            <TableColumn text="Items" prefWidth="200"/>
+                            <TableColumn text="Total" prefWidth="100"/>
+                            <TableColumn text="Status" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                </Tab>
+            </TabPane>
+        </VBox>
+    </center>
+</BorderPane>
