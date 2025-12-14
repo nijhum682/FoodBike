@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -24,24 +27,37 @@
 
     <center>
         <VBox spacing="20" style="-fx-padding: 20;">
+            <!-- Action Buttons -->
             <HBox spacing="10">
-                <Button onAction="#handleAddRestaurant" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="Add Restaurant">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin></Button>
-                <Button onAction="#handleViewRestaurants" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="View All Restaurants">
-               <HBox.margin>
-                  <Insets left="600.0" />
-               </HBox.margin></Button>
+                <Button onAction="#handleAddRestaurant" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="Add Restaurant" />
+                <Button onAction="#handleViewRestaurants" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="View All Restaurants" />
             </HBox>
 
+            <!-- Search and Filter Bar -->
+            <HBox alignment="CENTER" spacing="10" style="-fx-padding: 15; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-max-width: 1200;">
+                <TextField fx:id="searchField" promptText="Search restaurants..." style="-fx-padding: 10; -fx-font-size: 14; -fx-border-radius: 4; -fx-flex-grow: 1;" HBox.hgrow="ALWAYS" />
+                <Button onAction="#handleSearch" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="Search" />
+
+                <Separator orientation="VERTICAL" style="-fx-padding: 0 5;" />
+
+                <Label prefHeight="26.0" prefWidth="55.0" style="-fx-font-size: 12; -fx-text-fill: #555;" text="Division:" />
+                <ComboBox fx:id="divisionCombo" style="-fx-padding: 8; -fx-font-size: 12; -fx-min-width: 150;">
+                    <tooltip>
+                        <Tooltip text="Filter by restaurant division" />
+                    </tooltip>
+                </ComboBox>
+                <Button onAction="#handleFilter" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="Filter" />
+                <Button onAction="#handleClear" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white; -fx-border-radius: 4;" text="Clear" />
+            </HBox>
+
+            <!-- Restaurants Table -->
             <TableView fx:id="restaurantsTable" style="-fx-font-size: 12;">
                 <columns>
-                    <TableColumn prefWidth="150" text="Restaurant ID" />
-                    <TableColumn prefWidth="150" text="Name" />
-                    <TableColumn prefWidth="150" text="Division" />
-                    <TableColumn prefWidth="200" text="Address" />
-                    <TableColumn prefWidth="150" text="Actions" />
+                    <TableColumn prefWidth="100" text="Restaurant ID" />
+                    <TableColumn prefWidth="130" text="Name" />
+                    <TableColumn prefWidth="120" text="Division" />
+                    <TableColumn prefWidth="180" text="Address" />
+                    <TableColumn prefWidth="100" text="Rating" />
                 </columns>
             </TableView>
         </VBox>
