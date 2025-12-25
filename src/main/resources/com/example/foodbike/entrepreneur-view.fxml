@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.foodbike.EntrepreneurController"
-            style="-fx-background-color: #f5f5f5;">
+<BorderPane style="-fx-background-color: #f5f5f5;" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="com.example.foodbike.EntrepreneurController">
     <top>
         <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
             <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
-                <Label text="FoodBike" style="-fx-font-size: 28; -fx-text-fill: #ffffff; -fx-font-weight: bold;"/>
-                <Label text="Entrepreneur Dashboard" style="-fx-font-size: 16; -fx-text-fill: #bdc3c7;"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="userLabel" style="-fx-font-size: 14; -fx-text-fill: #ffffff;"/>
-                <Button text="Logout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" onAction="#handleLogout"/>
+                <Label style="-fx-font-size: 28; -fx-text-fill: #ffffff; -fx-font-weight: bold;" text="FoodBike🍟" />
+                <Label style="-fx-font-size: 16; -fx-text-fill: #bdc3c7;" text="Entrepreneur Dashboard" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Label fx:id="userLabel" style="-fx-font-size: 14; -fx-text-fill: #ffffff;" />
+                <Button onAction="#handleLogout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" text="Logout" />
             </HBox>
         </VBox>
     </top>
@@ -21,27 +27,27 @@
     <center>
         <VBox spacing="20" style="-fx-padding: 20;">
             <TabPane style="-fx-font-size: 12;">
-                <Tab text="Pending Orders" closable="false">
+                <Tab closable="false" text="Pending Orders">
                     <TableView fx:id="pendingOrdersTable" style="-fx-font-size: 12;">
                         <columns>
-                            <TableColumn text="Order ID" prefWidth="150"/>
-                            <TableColumn text="Customer" prefWidth="150"/>
-                            <TableColumn text="Items" prefWidth="200"/>
-                            <TableColumn text="Total" prefWidth="100"/>
-                            <TableColumn text="Status" prefWidth="100"/>
-                            <TableColumn text="Action" prefWidth="150"/>
+                            <TableColumn prefWidth="150" text="Order ID" />
+                            <TableColumn prefWidth="150" text="Customer" />
+                            <TableColumn prefWidth="200" text="Items" />
+                            <TableColumn prefWidth="100" text="Total" />
+                            <TableColumn prefWidth="100" text="Status" />
+                            <TableColumn prefWidth="150" text="Action" />
                         </columns>
                     </TableView>
                 </Tab>
 
-                <Tab text="Confirmed Orders" closable="false">
+                <Tab closable="false" text="Confirmed Orders">
                     <TableView fx:id="confirmedOrdersTable" style="-fx-font-size: 12;">
                         <columns>
-                            <TableColumn text="Order ID" prefWidth="150"/>
-                            <TableColumn text="Customer" prefWidth="150"/>
-                            <TableColumn text="Items" prefWidth="200"/>
-                            <TableColumn text="Total" prefWidth="100"/>
-                            <TableColumn text="Status" prefWidth="100"/>
+                            <TableColumn prefWidth="150" text="Order ID" />
+                            <TableColumn prefWidth="150" text="Customer" />
+                            <TableColumn prefWidth="200" text="Items" />
+                            <TableColumn prefWidth="100" text="Total" />
+                            <TableColumn prefWidth="100" text="Status" />
                         </columns>
                     </TableView>
                 </Tab>

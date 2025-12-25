@@ -32,16 +32,12 @@ public class SignInController {
         passwordVisible = !passwordVisible;
         if (passwordVisible) {
             visiblePasswordField.setText(passwordField.getText());
-            passwordField.setManaged(false);
             passwordField.setVisible(false);
-            visiblePasswordField.setManaged(true);
             visiblePasswordField.setVisible(true);
-            passwordToggleBtn.setText("🙈");
+            passwordToggleBtn.setText("︶");
         } else {
             passwordField.setText(visiblePasswordField.getText());
-            visiblePasswordField.setManaged(false);
             visiblePasswordField.setVisible(false);
-            passwordField.setManaged(true);
             passwordField.setVisible(true);
             passwordToggleBtn.setText("👁");
         }
@@ -59,10 +55,8 @@ public class SignInController {
 
         User user = databaseService.loginUser(username, password);
         if (user != null) {
-            // Check if user type matches
             User.UserType selectedType = getSelectedUserType();
             if (user.getUserType() == selectedType) {
-                // Login successful - show success message
                 errorMessage.setText("");
                 showSuccessMessage(user);
             } else {
@@ -79,8 +73,6 @@ public class SignInController {
         alert.setHeaderText(null);
         alert.setContentText("✓ Your Login is Successful!\nWelcome back, " + user.getUsername() + "!");
         alert.showAndWait();
-        
-        // Proceed to dashboard
         openDashboard(user);
     }
 
@@ -127,8 +119,6 @@ public class SignInController {
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setTitle(title);
             stage.setScene(scene);
-
-            // Store current user in controller
             if (user.getUserType() == User.UserType.USER) {
                 RestaurantController controller = fxmlLoader.getController();
                 controller.setCurrentUser(user);

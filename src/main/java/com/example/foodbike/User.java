@@ -23,7 +23,6 @@ public class User implements Serializable {
         this.userType = userType;
     }
 
-    // Getters and Setters
     public String getUsername() {
         return username;
     }

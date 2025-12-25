@@ -19,7 +19,6 @@ public class MenuItem implements Serializable {
         this.available = true;
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -62,6 +61,6 @@ public class MenuItem implements Serializable {
 
     @Override
     public String toString() {
-        return name + " - $" + price;
+        return name + " - ৳" + price;
     }
 }

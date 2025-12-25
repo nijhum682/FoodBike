@@ -1,11 +1,9 @@
 package com.example.foodbike;
-
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -18,7 +16,6 @@ public class RestaurantController {
     @FXML private ComboBox<String> divisionCombo;
     @FXML private GridPane restaurantsGrid;
     @FXML private Label userLabel;
-
     private DatabaseService databaseService;
     private User currentUser;
     private List<Restaurant> currentRestaurants;
@@ -54,9 +51,8 @@ public class RestaurantController {
         for (Restaurant restaurant : restaurants) {
             VBox restaurantCard = createRestaurantCard(restaurant);
             restaurantsGrid.add(restaurantCard, col, row);
-            
             col++;
-            if (col == 4) {
+            if (col == 4){
                 col = 0;
                 row++;
             }
@@ -69,25 +65,20 @@ public class RestaurantController {
         card.setSpacing(10);
         card.setPrefHeight(280);
 
-        // Restaurant Name
         Label nameLabel = new Label(restaurant.getName());
         nameLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
         nameLabel.setWrapText(true);
 
-        // Division
         Label divisionLabel = new Label("📍 " + restaurant.getDivision());
         divisionLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #7f8c8d;");
 
-        // Rating
         Label ratingLabel = new Label("⭐ " + String.format("%.1f", restaurant.getRating()));
         ratingLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #f39c12;");
 
-        // Address
         Label addressLabel = new Label(restaurant.getAddress());
         addressLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #95a5a6; -fx-wrap-text: true;");
         addressLabel.setWrapText(true);
 
-        // View Menu Button
         Button viewMenuBtn = new Button("View Menu");
         viewMenuBtn.setStyle("-fx-padding: 10; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4; -fx-cursor: hand;");
         viewMenuBtn.setMaxWidth(Double.MAX_VALUE);
@@ -145,6 +136,22 @@ public class RestaurantController {
         searchField.clear();
         divisionCombo.setValue("All");
         loadAllRestaurants();
+    }
+
+    @FXML
+    public void handleOrderHistory() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("order-history-view.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 800, 600);
+            Stage stage = new Stage();
+            stage.setTitle("FoodBike - Order History");
+            stage.setScene(scene);
+            OrderHistoryController orderHistoryController = fxmlLoader.getController();
+            orderHistoryController.setCurrentUser(currentUser, stage);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

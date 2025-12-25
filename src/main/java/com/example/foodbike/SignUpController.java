@@ -44,16 +44,12 @@ public class SignUpController {
         passwordVisible = !passwordVisible;
         if (passwordVisible) {
             visiblePasswordField.setText(passwordField.getText());
-            passwordField.setManaged(false);
             passwordField.setVisible(false);
-            visiblePasswordField.setManaged(true);
             visiblePasswordField.setVisible(true);
-            passwordToggleBtn.setText("🙈");
+            passwordToggleBtn.setText("︶");
         } else {
             passwordField.setText(visiblePasswordField.getText());
-            visiblePasswordField.setManaged(false);
             visiblePasswordField.setVisible(false);
-            passwordField.setManaged(true);
             passwordField.setVisible(true);
             passwordToggleBtn.setText("👁");
         }
@@ -64,16 +60,12 @@ public class SignUpController {
         confirmPasswordVisible = !confirmPasswordVisible;
         if (confirmPasswordVisible) {
             visibleConfirmPasswordField.setText(confirmPasswordField.getText());
-            confirmPasswordField.setManaged(false);
             confirmPasswordField.setVisible(false);
-            visibleConfirmPasswordField.setManaged(true);
             visibleConfirmPasswordField.setVisible(true);
-            confirmPasswordToggleBtn.setText("🙈");
+            confirmPasswordToggleBtn.setText("︶");
         } else {
             confirmPasswordField.setText(visibleConfirmPasswordField.getText());
-            visibleConfirmPasswordField.setManaged(false);
             visibleConfirmPasswordField.setVisible(false);
-            confirmPasswordField.setManaged(true);
             confirmPasswordField.setVisible(true);
             confirmPasswordToggleBtn.setText("👁");
         }
@@ -84,7 +76,6 @@ public class SignUpController {
         clearErrors();
         boolean isValid = true;
 
-        // Validate Email
         String email = emailField.getText().trim();
         if (email.isEmpty()) {
             emailError.setText("Email is required");
@@ -93,8 +84,7 @@ public class SignUpController {
             emailError.setText("Invalid email format");
             isValid = false;
         }
-
-        // Validate Phone Number
+        
         String phone = phoneField.getText().trim();
         if (phone.isEmpty()) {
             phoneError.setText("Phone number is required");
@@ -104,7 +94,6 @@ public class SignUpController {
             isValid = false;
         }
 
-        // Validate Username
         String username = usernameField.getText().trim();
         if (username.isEmpty()) {
             usernameError.setText("Username is required");
@@ -117,7 +106,6 @@ public class SignUpController {
             isValid = false;
         }
 
-        // Validate Password
         String password = passwordVisible ? visiblePasswordField.getText() : passwordField.getText();
         if (password.isEmpty()) {
             passwordError.setText("Password is required");
@@ -130,7 +118,6 @@ public class SignUpController {
             }
         }
 
-        // Validate Confirm Password
         String confirmPassword = confirmPasswordVisible ? visibleConfirmPasswordField.getText() : confirmPasswordField.getText();
         if (confirmPassword.isEmpty()) {
             confirmPasswordError.setText("Please confirm your password");
@@ -140,16 +127,15 @@ public class SignUpController {
             isValid = false;
         }
 
-        if (isValid) {
-            // Register user
+        if (
+            isValid) {
             User.UserType userType = getSelectedAccountType();
             boolean registered = databaseService.registerUser(username, email, phone, password, userType);
             
             if (registered) {
                 successMessage.setText("✓ Your Sign Up is Successful! Redirecting to Sign In...");
+
                 successMessage.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;");
-                
-                // Redirect to Sign In page after 2 seconds
                 javafx.application.Platform.runLater(() -> {
                     try {
                         Thread.sleep(2000);

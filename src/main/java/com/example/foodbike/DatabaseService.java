@@ -21,6 +21,11 @@ public class DatabaseService {
             initializeSampleData();
             saveDataToFiles();
         }
+
+        if (restaurants.isEmpty()) {
+            initializeRestaurants();
+            saveDataToFiles();
+        }
     }
 
     public static DatabaseService getInstance() {
@@ -30,10 +35,8 @@ public class DatabaseService {
         return instance;
     }
 
-    // Load data from persistent files
     @SuppressWarnings("unchecked")
     private void loadDataFromFiles() {
-        // Load users
         File usersFile = new File(USERS_FILE);
         if (usersFile.exists()) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(usersFile))) {
@@ -44,7 +47,6 @@ public class DatabaseService {
             }
         }
 
-        // Load restaurants
         File restaurantsFile = new File(RESTAURANTS_FILE);
         if (restaurantsFile.exists()) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(restaurantsFile))) {
@@ -55,7 +57,6 @@ public class DatabaseService {
             }
         }
 
-        // Load orders
         File ordersFile = new File(ORDERS_FILE);
         if (ordersFile.exists()) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(ordersFile))) {
@@ -66,24 +67,19 @@ public class DatabaseService {
             }
         }
     }
-
-    // Save data to persistent files
-    private void saveDataToFiles() {
-        // Save users
+    public void saveDataToFiles() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USERS_FILE))) {
             oos.writeObject(users);
         } catch (IOException e) {
             System.out.println("Error saving users file: " + e.getMessage());
         }
 
-        // Save restaurants
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(RESTAURANTS_FILE))) {
             oos.writeObject(restaurants);
         } catch (IOException e) {
             System.out.println("Error saving restaurants file: " + e.getMessage());
         }
 
-        // Save orders
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(ORDERS_FILE))) {
             oos.writeObject(orders);
         } catch (IOException e) {
@@ -92,30 +88,43 @@ public class DatabaseService {
     }
 
     private void initializeSampleData() {
-        // Add sample users
         users.put("admin1", new User("admin1", "Admin@123", "admin@foodbike.com", "01234567890", User.UserType.ADMIN));
         users.put("user1", new User("user1", "User@123", "user@foodbike.com", "01987654321", User.UserType.USER));
         users.put("entrepreneur1", new User("entrepreneur1", "Entrepreneur@123", "ent@foodbike.com", "01111111111", User.UserType.ENTREPRENEUR));
+        
+        initializeRestaurants();
+    }
 
-        // Add sample restaurants
+    private void initializeRestaurants() {
         String[] divisions = {"Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh"};
-        String[] restaurantNames = {"Burger King", "Pizza Hut", "KFC", "Biryani House", "Naan Paradise", "Sushi Paradise", 
-                                    "Thai Express", "Chinese Delight", "Mexican Fiesta", "Kebab King", "Taco Bell", "Dominos",
-                                    "Dunkin Donuts", "Chipotle", "Subway", "Chick-fil-A", "Popeyes", "Five Guys",
+        Map<String, String> divisionPrefixes = new HashMap<>();
+        divisionPrefixes.put("Dhaka", "DH");
+        divisionPrefixes.put("Chittagong", "CH");
+        divisionPrefixes.put("Sylhet", "SY");
+        divisionPrefixes.put("Rajshahi", "RJ");
+        divisionPrefixes.put("Khulna", "KH");
+        divisionPrefixes.put("Barisal", "BA");
+        divisionPrefixes.put("Rangpur", "RP");
+        divisionPrefixes.put("Mymensingh", "MY");
+        
+        String[] restaurantNames = {"Burger King", "Pizza Hut", "KFC", "Biryani House", "Naan Paradise", "Kebab Paradise",
+                                    "Thai Express", "Chinese Delight", "Mexican Fiesta", "Kebab King", "Mama Noura", "Dominos Pizza",
+                                    "Dunkin Donuts", "Whattacup", "Subway Lunch", "Chicken Fiesta", "Popeyes", "Five Guys",
                                     "Panera Bread", "In-N-Out", "Shake Shack", "Culver's", "Whataburger", "Cook Out",
-                                    "Bojangles", "Wingstop", "Raising Cane's", "Jollibee", "Zaxby's", "Jack in the Box",
-                                    "Sonic Drive-In", "Carl's Jr", "Wendy's", "Taco John's", "Del Taco", "Qdoba",
-                                    "Panda Express", "Asian Station", "Ramen House", "Pho King Good", "Dim Sum Palace", "Mongolian Grill",
+                                    "Bojangles", "Wings Nudget", "Raising Cane's", "Jollibee", "Zaxby's", "Jack in the Box",
+                                    "Pizza Drive-In", "Carl's Hotel", "Wendy's", "Sultan's Dine", "Kacchi Bhai", "Qdoba",
+                                    "Panda Express", "Asian Station", "Ramen House", "Smelling Good", "Tandoori Palace", "Mongolian Grill",
                                     "Indian Curry House", "Tandoori Palace", "Spice Route", "Samosa Corner", "Dhaba Style", "Biryani Delight",
-                                    "Middle Eastern Grill", "Shawarma King", "Falafel Express", "Hummus Hub", "Lebanese Kitchen", "Turkish Delight",
+                                    "Middle Eastern Grill", "Shawarma King", "Hotel Express", "Biriyani Hub", "Lebanese Kitchen", "Turkish Delight",
                                     "Pasta Paradise", "Italian Kitchen", "Trattoria Roma", "Mozzarella House", "Risotto Magic", "Carbonara King",
-                                    "Vegan Garden", "Green Bowl", "Salad Station", "Smoothie Bar", "Juice Junction", "Acai Bowl",
+                                    "Vegan Garden", "Green Bowl", "Salad Station", "Juice Bar", "Juice Junction", "Bar-B-Q Fish",
                                     "Chocolate Shop", "Dessert Paradise", "Ice Cream Dreams", "Donut Palace", "Cake House", "Pastry Corner",
-                                    "Coffee House", "Tea Paradise", "Cappuccino King", "Espresso Express", "Latte Lounge", "Mocha Moments",
+                                    "Coffee House", "Tea Paradise", "Cappuccino King", "Espresso Express", "BarBQ Lounge", "Moja Moments",
                                     "Breakfast Club", "Pancake House", "Waffle King", "Omelette Station", "Toast&Jam", "Bagel Bakery",
                                     "Seafood Shack", "Fish&Chips", "Crab Palace", "Lobster House", "Oyster Bar", "Prawn Paradise",
                                     "Steak House", "BBQ Pit", "Grilled Delights", "Meat Lovers", "Ribeye King", "Lamb Chops"};
 
+        Map<String, Integer> divisionCount = new HashMap<>();
         int restaurantId = 1;
         for (int i = 0; i < 100; i++) {
             String name = restaurantNames[i % restaurantNames.length];
@@ -123,25 +132,27 @@ public class DatabaseService {
                 name = name + " " + (i / restaurantNames.length);
             }
             String division = divisions[i % divisions.length];
-            Restaurant restaurant = new Restaurant("rest_" + restaurantId, name, division, "Address " + restaurantId + ", " + division);
+
+            int count = divisionCount.getOrDefault(division, 0) + 1;
+            divisionCount.put(division, count);
+            String prefix = divisionPrefixes.get(division);
+            String restaurantIdStr = String.format("%s%03d", prefix, count);
             
-            // Set random rating between 1.0 and 5.0 with variety
-            double randomRating = 1.0 + Math.random() * 4.0;
-            randomRating = Math.round(randomRating * 10) / 10.0; // Round to 1 decimal place
+            Restaurant restaurant = new Restaurant(restaurantIdStr, name, division, "Address " + restaurantId + ", " + division);
+
+            double randomRating = 1.0 + Math.random() * 4.0; // Round to 1 decimal place
+            randomRating = Math.round(randomRating * 10) / 10.0;
             restaurant.setRating(randomRating);
-            
-            // Add some menu items
             restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_1", "Special Combo", "Our signature dish", 250));
             restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_2", "Deluxe Meal", "Premium items", 350));
             restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_3", "Basic Meal", "Standard items", 150));
             restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_4", "Beverage", "Drinks and juices", 50));
             
-            restaurants.put("rest_" + restaurantId, restaurant);
+            restaurants.put(restaurantIdStr, restaurant);
             restaurantId++;
         }
     }
 
-    // User Methods
     public boolean registerUser(String username, String email, String phoneNumber, String password, User.UserType userType) {
         if (users.containsKey(username)) {
             return false;
@@ -168,7 +179,6 @@ public class DatabaseService {
         return users.containsKey(username);
     }
 
-    // Restaurant Methods
     public List<Restaurant> getAllRestaurants() {
         return new ArrayList<>(restaurants.values());
     }
@@ -202,11 +212,16 @@ public class DatabaseService {
             return false;
         }
         restaurants.put(restaurant.getId(), restaurant);
+        saveDataToFiles();
         return true;
     }
 
     public boolean deleteRestaurant(String restaurantId) {
-        return restaurants.remove(restaurantId) != null;
+        boolean removed = restaurants.remove(restaurantId) != null;
+        if (removed) {
+            saveDataToFiles();
+        }
+        return removed;
     }
 
     public List<String> getAllDivisions() {
@@ -219,9 +234,9 @@ public class DatabaseService {
         return divisions;
     }
 
-    // Order Methods
     public void createOrder(Order order) {
         orders.put(order.getOrderId(), order);
+        saveDataToFiles();
     }
 
     public Order getOrder(String orderId) {

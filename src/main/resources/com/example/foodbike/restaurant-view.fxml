@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane style="-fx-background-color: #f5f5f5;" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="com.example.foodbike.RestaurantController">
+<BorderPane style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.foodbike.RestaurantController">
     <top>
         <BorderPane style="-fx-background-color: #2c3e50; -fx-padding: 15;">
             <center>
@@ -22,6 +22,7 @@
             <right>
                 <HBox spacing="20" style="-fx-padding: 10;">
                     <Label fx:id="userLabel" style="-fx-font-size: 14; -fx-text-fill: #ffffff;" />
+                    <Button onAction="#handleOrderHistory" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #9b59b6; -fx-text-fill: white; -fx-border-radius: 4;" text="Order History" />
                     <Button onAction="#handleLogout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" text="Logout" />
                 </HBox>
             </right>
@@ -30,13 +31,11 @@
 
     <center>
         <VBox alignment="TOP_CENTER" spacing="15" style="-fx-padding: 20;">
-            <!-- Search and Filter Bar -->
             <HBox alignment="CENTER" spacing="10" style="-fx-padding: 15; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-max-width: 1000;">
                 <TextField fx:id="searchField" promptText="Search restaurants..." style="-fx-padding: 10; -fx-font-size: 14; -fx-border-radius: 4; -fx-flex-grow: 1;" HBox.hgrow="ALWAYS" />
                 <Button onAction="#handleSearch" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="Search" />
 
                 <Separator orientation="VERTICAL" style="-fx-padding: 0 5;" />
-
                 <Label prefHeight="26.0" prefWidth="45.0" style="-fx-font-size: 12; -fx-text-fill: #555;" text="Division:" />
                 <ComboBox fx:id="divisionCombo" style="-fx-padding: 8; -fx-font-size: 12; -fx-min-width: 150;">
                     <tooltip>
@@ -47,7 +46,6 @@
                 <Button onAction="#handleClear" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white; -fx-border-radius: 4;" text="Clear" />
             </HBox>
 
-            <!-- Restaurants List -->
             <ScrollPane style="-fx-padding: 0; -fx-border-color: transparent; -fx-fit-to-width: true;" HBox.hgrow="ALWAYS">
                 <GridPane fx:id="restaurantsGrid" alignment="CENTER" hgap="15" style="-fx-padding: 10;" vgap="15">
                     <columnConstraints>

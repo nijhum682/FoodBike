@@ -30,7 +30,6 @@ public class Order implements Serializable {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public String getOrderId() {
         return orderId;
     }

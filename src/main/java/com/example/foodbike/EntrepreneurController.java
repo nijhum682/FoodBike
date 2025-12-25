@@ -14,11 +14,8 @@ public class EntrepreneurController {
     @FXML private TableView<?> confirmedOrdersTable;
     @FXML private Label userLabel;
 
-    private DatabaseService databaseService;
-
     @FXML
     public void initialize() {
-        databaseService = DatabaseService.getInstance();
     }
 
     @FXML
