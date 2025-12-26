@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.foodbike.AdminHistoryController">
+    <top>
+        <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
+            <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
+                <Label style="-fx-font-size: 24; -fx-text-fill: #ffffff; -fx-font-weight: bold;" text="Admin Action History" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#handleClose" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" text="Close" />
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="15" style="-fx-padding: 20;">
+            <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-padding: 10; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8;">
+                <Label fx:id="totalCountLabel" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Total Actions: 0" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Label style="-fx-font-size: 12; -fx-text-fill: #555;" text="Filter by:" />
+                <ComboBox fx:id="filterCombo" prefWidth="200" style="-fx-font-size: 12;" />
+                <Button onAction="#handleFilter" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="Apply Filter" />
+                <Button onAction="#handleClear" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white; -fx-border-radius: 4;" text="Clear" />
+            </HBox>
+
+            <HBox spacing="10">
+                <Button onAction="#handleViewAllApplications" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #9b59b6; -fx-text-fill: white; -fx-border-radius: 4;" text="View All Applications" />
+            </HBox>
+
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                <VBox fx:id="historyBox" spacing="10" style="-fx-padding: 10;" />
+            </ScrollPane>
+        </VBox>
+    </center>
+</BorderPane>

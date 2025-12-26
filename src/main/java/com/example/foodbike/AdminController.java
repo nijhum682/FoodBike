@@ -26,9 +26,12 @@ public class AdminController {
     @FXML private TableColumn<Restaurant, Double> ratingColumn;
     @FXML private TextField searchField;
     @FXML private ComboBox<String> divisionCombo;
+    @FXML private VBox applicationsBox;
+    @FXML private Label pendingCountLabel;
 
     private DatabaseService databaseService;
     private List<Restaurant> allRestaurants;
+    private User currentUser;
 
     private static final Map<String, String> DIVISION_PREFIXES = new HashMap<>();
     static {
@@ -48,6 +51,162 @@ public class AdminController {
         setupDivisionCombo();
         setupTableColumns();
         loadRestaurants();
+        loadPendingApplications();
+    }
+    
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+    }
+
+    private void loadPendingApplications() {
+        applicationsBox.getChildren().clear();
+        List<RestaurantApplication> pendingApps = databaseService.getPendingApplications();
+        
+        pendingCountLabel.setText(pendingApps.size() + " Pending Application" + (pendingApps.size() != 1 ? "s" : ""));
+        
+        for (RestaurantApplication app : pendingApps) {
+            VBox appCard = new VBox(10);
+            appCard.setStyle("-fx-border-color: #3498db; -fx-border-width: 2; -fx-border-radius: 6; -fx-padding: 12; -fx-background-color: #ecf0f1;");
+            
+            Label nameLabel = new Label("Restaurant: " + app.getRestaurantName());
+            nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
+            
+            Label locationLabel = new Label("Location: " + app.getDivision() + " - " + app.getAddress());
+            locationLabel.setStyle("-fx-font-size: 11;");
+            
+            Label ratingLabel = new Label("Rating: " + app.getRating() + " ★");
+            ratingLabel.setStyle("-fx-font-size: 11;");
+            
+            Label menuLabel = new Label("Menu Items: " + app.getMenuItems().size());
+            menuLabel.setStyle("-fx-font-size: 11;");
+            
+            Label entrepreneurLabel = new Label("By: " + app.getEntrepreneurUsername());
+            entrepreneurLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #7f8c8d;");
+            
+            HBox buttonBox = new HBox(10);
+            Button viewBtn = new Button("View Details");
+            viewBtn.setStyle("-fx-padding: 6 12; -fx-font-size: 11; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;");
+            viewBtn.setOnAction(e -> showApplicationDetails(app));
+            
+            Button approveBtn = new Button("Approve");
+            approveBtn.setStyle("-fx-padding: 6 12; -fx-font-size: 11; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;");
+            approveBtn.setOnAction(e -> approveApplication(app));
+            
+            Button rejectBtn = new Button("Reject");
+            rejectBtn.setStyle("-fx-padding: 6 12; -fx-font-size: 11; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;");
+            rejectBtn.setOnAction(e -> rejectApplication(app));
+            
+            buttonBox.getChildren().addAll(viewBtn, approveBtn, rejectBtn);
+            
+            appCard.getChildren().addAll(nameLabel, locationLabel, ratingLabel, menuLabel, entrepreneurLabel, buttonBox);
+            applicationsBox.getChildren().add(appCard);
+        }
+    }
+
+    private void showApplicationDetails(RestaurantApplication app) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Application Details");
+        dialog.setHeaderText(app.getRestaurantName() + " - Application");
+        
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(20));
+        
+        Label nameLabel = new Label("Restaurant Name: " + app.getRestaurantName());
+        nameLabel.setStyle("-fx-font-weight: bold;");
+        
+        Label divisionLabel = new Label("Division: " + app.getDivision());
+        Label addressLabel = new Label("Address: " + app.getAddress());
+        Label ratingLabel = new Label("Rating: " + app.getRating() + " ★");
+        Label entrepreneurLabel = new Label("Entrepreneur: " + app.getEntrepreneurUsername());
+        
+        Label menuHeader = new Label("Menu Items:");
+        menuHeader.setStyle("-fx-font-weight: bold; -fx-padding: 10 0 5 0;");
+        
+        VBox menuBox = new VBox(5);
+        for (MenuItem item : app.getMenuItems()) {
+            Label itemLabel = new Label("• " + item.getName() + " - " + item.getDescription() + " (৳" + String.format("%.2f", item.getPrice()) + ")");
+            itemLabel.setStyle("-fx-font-size: 11;");
+            menuBox.getChildren().add(itemLabel);
+        }
+        
+        vbox.getChildren().addAll(nameLabel, divisionLabel, addressLabel, ratingLabel, entrepreneurLabel, menuHeader, menuBox);
+        
+        ScrollPane scrollPane = new ScrollPane(vbox);
+        scrollPane.setPrefHeight(400);
+        scrollPane.setPrefWidth(450);
+        scrollPane.setFitToWidth(true);
+        
+        dialog.getDialogPane().setContent(scrollPane);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.showAndWait();
+    }
+
+    private void approveApplication(RestaurantApplication app) {
+        TextInputDialog dialog = new TextInputDialog("Your restaurant application has been approved!");
+        dialog.setTitle("Approve Application");
+        dialog.setHeaderText("Approve: " + app.getRestaurantName());
+        dialog.setContentText("Message to entrepreneur:");
+        
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(message -> {
+            int count = 0;
+            for (Restaurant r : allRestaurants) {
+                if (r.getDivision().equals(app.getDivision())) {
+                    count++;
+                }
+            }
+            String prefix = DIVISION_PREFIXES.get(app.getDivision());
+            String restaurantId = String.format("%s%03d", prefix, count + 1);
+            
+            Restaurant newRestaurant = new Restaurant(restaurantId, app.getRestaurantName(), app.getDivision(), app.getAddress());
+            newRestaurant.setRating(app.getRating());
+            
+            for (MenuItem item : app.getMenuItems()) {
+                newRestaurant.addMenuItem(item);
+            }
+            
+            databaseService.addRestaurant(newRestaurant);
+            databaseService.updateApplicationStatus(app.getApplicationId(), RestaurantApplication.ApplicationStatus.APPROVED, message);
+            
+            if (currentUser != null) {
+                AdminAction action = new AdminAction(
+                    currentUser.getUsername(),
+                    AdminAction.ActionType.APPROVED_APPLICATION,
+                    app.getRestaurantName(),
+                    "Approved application for " + app.getRestaurantName() + " by " + app.getEntrepreneurUsername() + ". Message: " + message
+                );
+                databaseService.logAdminAction(action);
+            }
+            
+            loadRestaurants();
+            loadPendingApplications();
+            showAlert("Success", "Application Approved", "Restaurant has been added successfully!");
+        });
+    }
+
+    private void rejectApplication(RestaurantApplication app) {
+        TextInputDialog dialog = new TextInputDialog("Sorry, your application does not meet our requirements.");
+        dialog.setTitle("Reject Application");
+        dialog.setHeaderText("Reject: " + app.getRestaurantName());
+        dialog.setContentText("Message to entrepreneur:");
+        
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(message -> {
+            databaseService.updateApplicationStatus(app.getApplicationId(), RestaurantApplication.ApplicationStatus.REJECTED, message);
+            
+            if (currentUser != null) {
+                AdminAction action = new AdminAction(
+                    currentUser.getUsername(),
+                    AdminAction.ActionType.REJECTED_APPLICATION,
+                    app.getRestaurantName(),
+                    "Rejected application for " + app.getRestaurantName() + " by " + app.getEntrepreneurUsername() + ". Message: " + message
+                );
+                databaseService.logAdminAction(action);
+            }
+            
+            loadPendingApplications();
+            showAlert("Success", "Application Rejected", "Application has been rejected.");
+        });
     }
 
     private void setupDivisionCombo() {
@@ -55,6 +214,9 @@ public class AdminController {
             "All", "Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh"
         ));
         divisionCombo.setValue("All");
+        
+        // Add listener to automatically filter when division is selected
+        divisionCombo.setOnAction(e -> handleFilter());
     }
 
     @SuppressWarnings("unchecked")
@@ -135,6 +297,15 @@ public class AdminController {
                     
                     Optional<ButtonType> result = confirmAlert.showAndWait();
                     if (result.isPresent() && result.get() == ButtonType.OK) {
+                        if (currentUser != null) {
+                            AdminAction action = new AdminAction(
+                                currentUser.getUsername(),
+                                AdminAction.ActionType.DELETED_RESTAURANT,
+                                restaurant.getName(),
+                                "Deleted restaurant: " + restaurant.getName() + " (ID: " + restaurant.getId() + ")"
+                            );
+                            databaseService.logAdminAction(action);
+                        }
                         databaseService.deleteRestaurant(restaurant.getId());
                         loadRestaurants();
                     }
@@ -287,6 +458,15 @@ public class AdminController {
         Optional<Restaurant> result = dialog.showAndWait();
         result.ifPresent(restaurant -> {
             if (databaseService.addRestaurant(restaurant)) {
+                if (currentUser != null) {
+                    AdminAction action = new AdminAction(
+                        currentUser.getUsername(),
+                        AdminAction.ActionType.ADDED_RESTAURANT,
+                        restaurant.getName(),
+                        "Added restaurant: " + restaurant.getName() + " in " + restaurant.getDivision()
+                    );
+                    databaseService.logAdminAction(action);
+                }
                 showMenuDialog(restaurant);
                 loadRestaurants();
                 showAlert("Success", "Restaurant Added", "Restaurant '" + restaurant.getName() + "' has been added successfully!");
@@ -563,6 +743,25 @@ public class AdminController {
     @FXML
     public void handleViewRestaurants() {
         loadRestaurants();
+    }
+    
+    @FXML
+    public void handleViewHistory() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("admin-history-view.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 900, 700);
+            
+            AdminHistoryController controller = fxmlLoader.getController();
+            controller.setCurrentUser(currentUser);
+            
+            Stage stage = new Stage();
+            stage.setTitle("Admin Action History");
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Failed to Load History", "Could not open admin history window.");
+        }
     }
 
     @FXML

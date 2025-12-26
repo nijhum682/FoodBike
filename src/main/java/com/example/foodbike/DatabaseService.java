@@ -8,14 +8,20 @@ public class DatabaseService {
     private Map<String, User> users;
     private Map<String, Restaurant> restaurants;
     private Map<String, Order> orders;
+    private Map<String, RestaurantApplication> applications;
+    private Map<String, AdminAction> adminActions;
     private static final String USERS_FILE = "users.dat";
     private static final String RESTAURANTS_FILE = "restaurants.dat";
     private static final String ORDERS_FILE = "orders.dat";
+    private static final String APPLICATIONS_FILE = "applications.dat";
+    private static final String ADMIN_ACTIONS_FILE = "admin_actions.dat";
 
     private DatabaseService() {
         users = new HashMap<>();
         restaurants = new HashMap<>();
         orders = new HashMap<>();
+        applications = new HashMap<>();
+        adminActions = new HashMap<>();
         loadDataFromFiles();
         if (users.isEmpty()) {
             initializeSampleData();
@@ -66,6 +72,26 @@ public class DatabaseService {
                 orders = new HashMap<>();
             }
         }
+
+        File applicationsFile = new File(APPLICATIONS_FILE);
+        if (applicationsFile.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(applicationsFile))) {
+                applications = (Map<String, RestaurantApplication>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Error loading applications file: " + e.getMessage());
+                applications = new HashMap<>();
+            }
+        }
+        
+        File adminActionsFile = new File(ADMIN_ACTIONS_FILE);
+        if (adminActionsFile.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(adminActionsFile))) {
+                adminActions = (Map<String, AdminAction>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Error loading admin actions file: " + e.getMessage());
+                adminActions = new HashMap<>();
+            }
+        }
     }
     public void saveDataToFiles() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USERS_FILE))) {
@@ -84,6 +110,18 @@ public class DatabaseService {
             oos.writeObject(orders);
         } catch (IOException e) {
             System.out.println("Error saving orders file: " + e.getMessage());
+        }
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(APPLICATIONS_FILE))) {
+            oos.writeObject(applications);
+        } catch (IOException e) {
+            System.out.println("Error saving applications file: " + e.getMessage());
+        }
+        
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(ADMIN_ACTIONS_FILE))) {
+            oos.writeObject(adminActions);
+        } catch (IOException e) {
+            System.out.println("Error saving admin actions file: " + e.getMessage());
         }
     }
 
@@ -261,5 +299,69 @@ public class DatabaseService {
             }
         }
         return restaurantOrders;
+    }
+
+    public void submitApplication(RestaurantApplication application) {
+        applications.put(application.getApplicationId(), application);
+        saveDataToFiles();
+    }
+
+    public List<RestaurantApplication> getPendingApplications() {
+        List<RestaurantApplication> pendingApps = new ArrayList<>();
+        for (RestaurantApplication app : applications.values()) {
+            if (app.getStatus() == RestaurantApplication.ApplicationStatus.PENDING) {
+                pendingApps.add(app);
+            }
+        }
+        return pendingApps;
+    }
+
+    public List<RestaurantApplication> getEntrepreneurApplications(String username) {
+        List<RestaurantApplication> entrepreneurApps = new ArrayList<>();
+        for (RestaurantApplication app : applications.values()) {
+            if (app.getEntrepreneurUsername().equals(username)) {
+                entrepreneurApps.add(app);
+            }
+        }
+        return entrepreneurApps;
+    }
+
+    public RestaurantApplication getApplication(String applicationId) {
+        return applications.get(applicationId);
+    }
+
+    public void updateApplicationStatus(String applicationId, RestaurantApplication.ApplicationStatus status, String message) {
+        RestaurantApplication app = applications.get(applicationId);
+        if (app != null) {
+            app.setStatus(status);
+            app.setAdminMessage(message);
+            saveDataToFiles();
+        }
+    }
+    
+    public void logAdminAction(AdminAction action) {
+        adminActions.put(action.getActionId(), action);
+        saveDataToFiles();
+    }
+    
+    public List<AdminAction> getAllAdminActions() {
+        List<AdminAction> actions = new ArrayList<>(adminActions.values());
+        actions.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+        return actions;
+    }
+    
+    public List<AdminAction> getAdminActionsByType(AdminAction.ActionType type) {
+        List<AdminAction> filteredActions = new ArrayList<>();
+        for (AdminAction action : adminActions.values()) {
+            if (action.getActionType() == type) {
+                filteredActions.add(action);
+            }
+        }
+        filteredActions.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+        return filteredActions;
+    }
+    
+    public List<RestaurantApplication> getAllApplications() {
+        return new ArrayList<>(applications.values());
     }
 }

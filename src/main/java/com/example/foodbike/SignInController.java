@@ -119,8 +119,15 @@ public class SignInController {
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setTitle(title);
             stage.setScene(scene);
-            if (user.getUserType() == User.UserType.USER) {
+            
+            if (user.getUserType() == User.UserType.ADMIN) {
+                AdminController controller = fxmlLoader.getController();
+                controller.setCurrentUser(user);
+            } else if (user.getUserType() == User.UserType.USER) {
                 RestaurantController controller = fxmlLoader.getController();
+                controller.setCurrentUser(user);
+            } else if (user.getUserType() == User.UserType.ENTREPRENEUR) {
+                EntrepreneurController controller = fxmlLoader.getController();
                 controller.setCurrentUser(user);
             }
         } catch (IOException e) {

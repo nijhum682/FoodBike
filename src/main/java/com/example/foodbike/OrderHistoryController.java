@@ -113,8 +113,8 @@ public class OrderHistoryController {
         Order.OrderStatus[] stageStatuses = {
             Order.OrderStatus.PENDING,
             Order.OrderStatus.CONFIRMED,
-            Order.OrderStatus.PREPARING,
-            Order.OrderStatus.READY
+            Order.OrderStatus.READY,
+            Order.OrderStatus.DELIVERED
         };
 
         for (int i = 0; i < stages.length; i++) {

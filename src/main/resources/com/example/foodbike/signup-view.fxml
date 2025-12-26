@@ -99,7 +99,6 @@
                <VBox.margin>
                   <Insets left="500.0" right="500.0" />
                </VBox.margin>
-                    
                 </VBox>
             </VBox>
         </ScrollPane>
