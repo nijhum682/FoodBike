@@ -13,7 +13,7 @@ Menu Management: Restaurant owners can add, edit, and manage menu items with det
 
 Restaurant Search & Filtering: Customers can search restaurants by name and filter by division across eight Bangladesh regions for easy restaurant discovery.
 
-Order Placement & Tracking: Users can browse menus, add items to cart, select payment methods (Cash on Delivery, bKash, Nagad, Credit/Debit Card), place orders, and track status through multiple states (Pending, Confirmed, Preparing, Ready, Delivered, Cancelled).
+Order Placement & Tracking: Users can browse menus, add items to cart, select payment methods (Cash on Delivery, bKash, Nagad), place orders, and track status through multiple states (Pending, Confirmed, Preparing, Ready, Delivered, Cancelled).
 
 Auto-Cancellation Mechanism: Unconfirmed orders are automatically cancelled after a specified time threshold to maintain order queue efficiency.
 
