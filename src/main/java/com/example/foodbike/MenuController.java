@@ -13,6 +13,7 @@ import java.util.*;
 
 public class MenuController {
     @FXML private Label restaurantNameLabel;
+    @FXML private Label ratingLabel;
     @FXML private VBox menuItemsVBox;
     @FXML private VBox selectedItemsVBox;
     @FXML private Label totalLabel;
@@ -31,6 +32,9 @@ public class MenuController {
     public void setRestaurant(Restaurant restaurant) {
         this.restaurant = restaurant;
         restaurantNameLabel.setText(restaurant.getName());
+        if (ratingLabel != null) {
+            ratingLabel.setText("★ " + String.format("%.1f", restaurant.getRating()));
+        }
     }
 
     public void setCurrentUser(User user) {
@@ -48,18 +52,23 @@ public class MenuController {
 
     private VBox createMenuItemCard(MenuItem item) {
         VBox card = new VBox();
-        card.setStyle("-fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 12; -fx-background-color: white;");
+        
+        String bgColor = "#F5DEB3";
+        
+        card.setStyle("-fx-border-color: transparent; -fx-border-radius: 12; -fx-padding: 15; " +
+                     "-fx-background-color: " + bgColor + "; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0, 0, 3);");
         card.setSpacing(8);
 
         Label nameLabel = new Label(item.getName());
-        nameLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        nameLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
 
         Label descLabel = new Label(item.getDescription());
-        descLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #7f8c8d;");
+        descLabel.setStyle("-fx-font-size: 12; -fx-font-weight: 600; -fx-text-fill: #333333;");
         descLabel.setWrapText(true);
 
         Label priceLabel = new Label("৳" + String.format("%.2f", item.getPrice()));
-        priceLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #27ae60;");
+        priceLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #1B5E20;");
 
         Button addBtn = new Button("+ Add to Order");
         addBtn.setStyle("-fx-padding: 8; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4; -fx-cursor: hand;");
@@ -314,7 +323,72 @@ public class MenuController {
         }
     }
 
+    @FXML
+    public void handleViewReviews() {
+        List<Review> reviews = databaseService.getRestaurantReviews(restaurant.getId());
 
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Reviews - " + restaurant.getName());
+        dialog.setHeaderText("Customer Reviews");
+
+        VBox content = new VBox();
+        content.setSpacing(15);
+        content.setPadding(new Insets(20));
+        content.setPrefWidth(600);
+
+        Label statsLabel = new Label("Average Rating: ★ " + String.format("%.1f", restaurant.getRating()) + " (" + reviews.size() + " reviews)");
+        statsLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #f39c12;");
+        content.getChildren().add(statsLabel);
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setPrefHeight(400);
+        scrollPane.setFitToWidth(true);
+
+        VBox reviewsBox = new VBox(15);
+        reviewsBox.setPadding(new Insets(10));
+
+        if (reviews.isEmpty()) {
+            Label noReviews = new Label("No reviews yet. Be the first to review!");
+            noReviews.setStyle("-fx-font-size: 14; -fx-text-fill: #7f8c8d;");
+            reviewsBox.getChildren().add(noReviews);
+        } else {
+            for (Review review : reviews) {
+                VBox reviewCard = new VBox(8);
+                reviewCard.setStyle("-fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 12; -fx-background-color: white;");
+
+                HBox headerBox = new HBox(10);
+                Label userLabel = new Label(review.getUserId());
+                userLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
+
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                String stars = "★".repeat(review.getRating()) + "☆".repeat(5 - review.getRating());
+                Label ratingStars = new Label(stars);
+                ratingStars.setStyle("-fx-font-size: 14; -fx-text-fill: #f39c12;");
+
+                headerBox.getChildren().addAll(userLabel, spacer, ratingStars);
+
+                Label commentLabel = new Label(review.getComment());
+                commentLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #2c3e50;");
+                commentLabel.setWrapText(true);
+
+                Label dateLabel = new Label(review.getCreatedAt().toString().substring(0, 10));
+                dateLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #95a5a6;");
+
+                reviewCard.getChildren().addAll(headerBox, commentLabel, dateLabel);
+                reviewsBox.getChildren().add(reviewCard);
+            }
+        }
+
+        scrollPane.setContent(reviewsBox);
+        content.getChildren().add(scrollPane);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+        dialog.showAndWait();
+    }
     @FXML
     public void handleClearOrder() {
         selectedItems.clear();

@@ -382,7 +382,7 @@ public class AdminController {
         grid.setPadding(new Insets(20));
         
         TextField nameField = new TextField();
-        nameField.setPromptText("Restaurant Name");
+        nameField.setPromptText("Restaurant Name (e.g., Khabar Ghar, Bhoj Bari, Ruchi Bhandar, Spice Lounge)");
         nameField.setPrefWidth(250);
         
         ComboBox<String> divisionComboAdd = new ComboBox<>();

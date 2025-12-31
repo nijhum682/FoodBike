@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.foodbike.AdminController">
+<BorderPane style="-fx-background-color: linear-gradient(to bottom right, #4facfe 0%, #00f2fe 100%);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.foodbike.AdminController">
     <top>
         <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
             <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
@@ -28,7 +28,7 @@
                 <HBox alignment="CENTER_LEFT" spacing="10">
                     <Label fx:id="pendingCountLabel" style="-fx-font-size: 16; -fx-font-weight: bold;" text="Pending Applications" />
                 </HBox>
-                <ScrollPane fitToWidth="true" prefHeight="105.0" prefWidth="1120.0" style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8;">
+                <ScrollPane fitToWidth="true" prefHeight="105.0" prefWidth="1120.0" style="-fx-background-color: #E3F2FD; -fx-border-color: transparent; -fx-border-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);">
                     <VBox fx:id="applicationsBox" spacing="10" style="-fx-padding: 10;" />
                 </ScrollPane>
             </VBox>
@@ -43,7 +43,7 @@
             </HBox>
 
 
-            <HBox alignment="CENTER" spacing="10" style="-fx-padding: 15; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-max-width: 1200;">
+            <HBox alignment="CENTER" spacing="10" style="-fx-padding: 15; -fx-background-color: #E3F2FD; -fx-border-color: transparent; -fx-border-radius: 10; -fx-max-width: 1200; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);">
                 <TextField fx:id="searchField" promptText="Search restaurants..." style="-fx-padding: 10; -fx-font-size: 14; -fx-border-radius: 4; -fx-flex-grow: 1;" HBox.hgrow="ALWAYS" />
                 <Button onAction="#handleSearch" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;" text="Search" />
 
@@ -59,7 +59,7 @@
                 <Button onAction="#handleClear" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white; -fx-border-radius: 4;" text="Clear" />
             </HBox>
 
-            <TableView fx:id="restaurantsTable" style="-fx-font-size: 12;">
+            <TableView fx:id="restaurantsTable" style="-fx-font-size: 12; -fx-background-color: #E3F2FD; -fx-border-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);">
                 <columns>
                     <TableColumn prefWidth="100" text="Restaurant ID" />
                     <TableColumn prefWidth="130" text="Name" />

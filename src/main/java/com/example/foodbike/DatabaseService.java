@@ -10,11 +10,13 @@ public class DatabaseService {
     private Map<String, Order> orders;
     private Map<String, RestaurantApplication> applications;
     private Map<String, AdminAction> adminActions;
+    private Map<String, Review> reviews;
     private static final String USERS_FILE = "users.dat";
     private static final String RESTAURANTS_FILE = "restaurants.dat";
     private static final String ORDERS_FILE = "orders.dat";
     private static final String APPLICATIONS_FILE = "applications.dat";
     private static final String ADMIN_ACTIONS_FILE = "admin_actions.dat";
+    private static final String REVIEWS_FILE = "reviews.dat";
 
     private DatabaseService() {
         users = new HashMap<>();
@@ -22,16 +24,86 @@ public class DatabaseService {
         orders = new HashMap<>();
         applications = new HashMap<>();
         adminActions = new HashMap<>();
+        reviews = new HashMap<>();
         loadDataFromFiles();
         if (users.isEmpty()) {
             initializeSampleData();
             saveDataToFiles();
         }
 
-        if (restaurants.isEmpty()) {
+        Map<String, Restaurant> preservedRestaurants = new HashMap<>();
+        for (Map.Entry<String, Restaurant> entry : restaurants.entrySet()) {
+            String id = entry.getKey();
+            if (id.matches("[A-Z]{2}\\d{3}") && Integer.parseInt(id.substring(2)) > 13) {
+                preservedRestaurants.put(id, entry.getValue());
+            }
+        }
+
+        List<RestaurantApplication> approvedApps = new ArrayList<>();
+        for (RestaurantApplication app : applications.values()) {
+            if (app.getStatus() == RestaurantApplication.ApplicationStatus.APPROVED) {
+                approvedApps.add(app);
+            }
+        }
+
+        if (restaurants.size() < 100 || shouldReinitializeDefaultRestaurants()) {
             initializeRestaurants();
+            restaurants.putAll(preservedRestaurants);
+            
+            for (RestaurantApplication app : approvedApps) {
+                Restaurant existingRestaurant = null;
+                for (Restaurant r : restaurants.values()) {
+                    if (r.getName().equals(app.getRestaurantName()) && 
+                        r.getDivision().equals(app.getDivision())) {
+                        existingRestaurant = r;
+                        break;
+                    }
+                }
+                
+                if (existingRestaurant == null) {
+                    Map<String, String> divisionPrefixes = new HashMap<>();
+                    divisionPrefixes.put("Dhaka", "DH");
+                    divisionPrefixes.put("Chittagong", "CH");
+                    divisionPrefixes.put("Sylhet", "SY");
+                    divisionPrefixes.put("Rajshahi", "RJ");
+                    divisionPrefixes.put("Khulna", "KH");
+                    divisionPrefixes.put("Barisal", "BA");
+                    divisionPrefixes.put("Rangpur", "RP");
+                    divisionPrefixes.put("Mymensingh", "MY");
+                    
+                    int count = 0;
+                    for (Restaurant r : restaurants.values()) {
+                        if (r.getDivision().equals(app.getDivision())) {
+                            count++;
+                        }
+                    }
+                    String prefix = divisionPrefixes.get(app.getDivision());
+                    String restaurantId = String.format("%s%03d", prefix, count + 1);
+                    
+                    Restaurant restaurant = new Restaurant(restaurantId, app.getRestaurantName(), 
+                                                          app.getDivision(), app.getAddress());
+                    restaurant.setRating(app.getRating());
+                    
+                    for (MenuItem item : app.getMenuItems()) {
+                        restaurant.addMenuItem(item);
+                    }
+                    
+                    restaurants.put(restaurantId, restaurant);
+                }
+            }
+            
             saveDataToFiles();
         }
+    }
+
+    private boolean shouldReinitializeDefaultRestaurants() {
+        for (Restaurant r : restaurants.values()) {
+            if (r.getName().equals("Burger King") || r.getName().equals("Pizza Hut") || 
+                r.getName().equals("KFC") || r.getName().contains("Whattacup")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static DatabaseService getInstance() {
@@ -102,6 +174,16 @@ public class DatabaseService {
                 adminActions = new HashMap<>();
             }
         }
+
+        File reviewsFile = new File(REVIEWS_FILE);
+        if (reviewsFile.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(reviewsFile))) {
+                reviews = (Map<String, Review>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Error loading reviews file: " + e.getMessage());
+                reviews = new HashMap<>();
+            }
+        }
     }
     public void saveDataToFiles() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USERS_FILE))) {
@@ -133,6 +215,12 @@ public class DatabaseService {
         } catch (IOException e) {
             System.out.println("Error saving admin actions file: " + e.getMessage());
         }
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(REVIEWS_FILE))) {
+            oos.writeObject(reviews);
+        } catch (IOException e) {
+            System.out.println("Error saving reviews file: " + e.getMessage());
+        }
     }
 
     private void initializeSampleData() {
@@ -155,22 +243,27 @@ public class DatabaseService {
         divisionPrefixes.put("Rangpur", "RP");
         divisionPrefixes.put("Mymensingh", "MY");
         
-        String[] restaurantNames = {"Burger King", "Pizza Hut", "KFC", "Biryani House", "Naan Paradise", "Kebab Paradise",
-                                    "Thai Express", "Chinese Delight", "Mexican Fiesta", "Kebab King", "Mama Noura", "Dominos Pizza",
-                                    "Dunkin Donuts", "Whattacup", "Subway Lunch", "Chicken Fiesta", "Popeyes", "Five Guys",
-                                    "Panera Bread", "In-N-Out", "Shake Shack", "Culver's", "Whataburger", "Cook Out",
-                                    "Bojangles", "Wings Nudget", "Raising Cane's", "Jollibee", "Zaxby's", "Jack in the Box",
-                                    "Pizza Drive-In", "Carl's Hotel", "Wendy's", "Sultan's Dine", "Kacchi Bhai", "Qdoba",
-                                    "Panda Express", "Asian Station", "Ramen House", "Smelling Good", "Tandoori Palace", "Mongolian Grill",
-                                    "Indian Curry House", "Tandoori Palace", "Spice Route", "Samosa Corner", "Dhaba Style", "Biryani Delight",
-                                    "Middle Eastern Grill", "Shawarma King", "Hotel Express", "Biriyani Hub", "Lebanese Kitchen", "Turkish Delight",
-                                    "Pasta Paradise", "Italian Kitchen", "Trattoria Roma", "Mozzarella House", "Risotto Magic", "Carbonara King",
-                                    "Vegan Garden", "Green Bowl", "Salad Station", "Juice Bar", "Juice Junction", "Bar-B-Q Fish",
-                                    "Chocolate Shop", "Dessert Paradise", "Ice Cream Dreams", "Donut Palace", "Cake House", "Pastry Corner",
-                                    "Coffee House", "Tea Paradise", "Cappuccino King", "Espresso Express", "BarBQ Lounge", "Moja Moments",
-                                    "Breakfast Club", "Pancake House", "Waffle King", "Omelette Station", "Toast&Jam", "Bagel Bakery",
-                                    "Seafood Shack", "Fish&Chips", "Crab Palace", "Lobster House", "Oyster Bar", "Prawn Paradise",
-                                    "Steak House", "BBQ Pit", "Grilled Delights", "Meat Lovers", "Ribeye King", "Lamb Chops"};
+        String[] restaurantNames = {"Khabar Ghar", "Bhoj Bari", "Ruchi Bhandar", "Pakghor", "Swaad Kutir", 
+                                    "Amader Rannaghor", "Khana Khazana", "Rasoi Ghar", "Bhojan Griha", "Annapurna Bhoj",
+                                    "Spice Lounge", "Flavour Junction", "Royal Feast", "Golden Spoon", "Heritage Kitchen",
+                                    "Bawarchi Khana", "Dawat Ghar", "Mehfil Restaurant", "Sultan's Kitchen", "Mughal Durbar",
+                                    "Kacchi Bhai", "Biryani Mahal", "Tehari House", "Pulao Palace", "Rice Bowl",
+                                    "Tandoori Adda", "Kebab Corner", "Tikka Time", "Grill Master", "BBQ Nation",
+                                    "Curry Hub", "Masala Magic", "Spice Garden", "Chili Chicken", "Pepper Pot",
+                                    "Roti Ghar", "Naan Stop", "Paratha Plaza", "Chapati Corner", "Bread Basket",
+                                    "Desi Dhaba", "Village Kitchen", "Gram Bangla", "Shobar Rannaghor", "Bazar Bhoj",
+                                    "Fish Fry", "Machher Bazar", "Prawn Paradise", "Seafood Station", "Ocean Delight",
+                                    "Chicken King", "Murgh Mahal", "Roast House", "Fry Point", "Korai Kitchen",
+                                    "Sweet Corner", "Mishti Mukh", "Rosogolla House", "Dessert Delight", "Cake Palace",
+                                    "Tea Time", "Cha Chakra", "Coffee Adda", "Cafe Culture", "Brew Station",
+                                    "Breakfast Bazar", "Morning Meals", "Nashta Ghar", "Brunch Spot", "Early Bites",
+                                    "Fast Food Fusion", "Quick Bites", "Snack Attack", "Chatpata Corner", "Street Food",
+                                    "Pizza Point", "Pasta House", "Italian Touch", "Continental Cafe", "Western Grill",
+                                    "Chinese Wok", "Thai Spice", "Asian Bowl", "Oriental Kitchen", "Dragon House",
+                                    "Burger Spot", "Sandwich Shop", "Wrap Zone", "Hot Dog Hub", "Sub Station",
+                                    "Juice Junction", "Lassi Bar", "Smoothie Corner", "Borhani Bazar", "Drink Depot",
+                                    "Vegetarian Villa", "Green Plate", "Salad Bowl", "Healthy Eats", "Organic Oasis"};
+
 
         Map<String, Integer> divisionCount = new HashMap<>();
         int restaurantId = 1;
@@ -377,5 +470,46 @@ public class DatabaseService {
     
     public List<RestaurantApplication> getAllApplications() {
         return new ArrayList<>(applications.values());
+    }
+
+    public void addReview(Review review) {
+        reviews.put(review.getReviewId(), review);
+        updateRestaurantRating(review.getRestaurantId());
+        saveDataToFiles();
+    }
+
+    public List<Review> getRestaurantReviews(String restaurantId) {
+        List<Review> restaurantReviews = new ArrayList<>();
+        for (Review review : reviews.values()) {
+            if (review.getRestaurantId().equals(restaurantId)) {
+                restaurantReviews.add(review);
+            }
+        }
+        restaurantReviews.sort((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()));
+        return restaurantReviews;
+    }
+
+    public boolean hasUserReviewedOrder(String userId, String orderId) {
+        for (Review review : reviews.values()) {
+            if (review.getUserId().equals(userId) && review.getOrderId().equals(orderId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void updateRestaurantRating(String restaurantId) {
+        Restaurant restaurant = restaurants.get(restaurantId);
+        if (restaurant != null) {
+            List<Review> restaurantReviews = getRestaurantReviews(restaurantId);
+            if (!restaurantReviews.isEmpty()) {
+                double totalRating = 0;
+                for (Review review : restaurantReviews) {
+                    totalRating += review.getRating();
+                }
+                double averageRating = totalRating / restaurantReviews.size();
+                restaurant.setRating(Math.round(averageRating * 10.0) / 10.0);
+            }
+        }
     }
 }

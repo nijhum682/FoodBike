@@ -61,22 +61,27 @@ public class RestaurantController {
 
     private VBox createRestaurantCard(Restaurant restaurant) {
         VBox card = new VBox();
-        card.setStyle("-fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: white; -fx-cursor: hand;");
+        
+        String bgColor = "#F5DEB3";
+        
+        card.setStyle("-fx-border-color: transparent; -fx-border-radius: 12; -fx-padding: 15; " +
+                     "-fx-background-color: " + bgColor + "; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4); -fx-cursor: hand;");
         card.setSpacing(10);
         card.setPrefHeight(280);
 
         Label nameLabel = new Label(restaurant.getName());
-        nameLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        nameLabel.setStyle("-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
         nameLabel.setWrapText(true);
 
         Label divisionLabel = new Label("📍 " + restaurant.getDivision());
-        divisionLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #7f8c8d;");
+        divisionLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #333333;");
 
         Label ratingLabel = new Label("⭐ " + String.format("%.1f", restaurant.getRating()));
-        ratingLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #f39c12;");
+        ratingLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #FF8C00;");
 
         Label addressLabel = new Label(restaurant.getAddress());
-        addressLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #95a5a6; -fx-wrap-text: true;");
+        addressLabel.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #555555; -fx-wrap-text: true;");
         addressLabel.setWrapText(true);
 
         Button viewMenuBtn = new Button("View Menu");

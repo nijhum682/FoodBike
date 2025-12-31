@@ -99,8 +99,8 @@ public class Order implements Serializable {
     
     public boolean shouldAutoCancelled() {
         if (this.status == OrderStatus.PENDING && this.createdAt != null) {
-            LocalDateTime fiveHoursAgo = LocalDateTime.now().minusHours(5);
-            return this.createdAt.isBefore(fiveHoursAgo);
+            LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+            return this.createdAt.isBefore(oneHourAgo);
         }
         return false;
     }

@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.foodbike.EntrepreneurController">
+<BorderPane style="-fx-background-color: linear-gradient(to bottom right, #43e97b 0%, #38f9d7 100%);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.foodbike.EntrepreneurController">
     <top>
         <VBox style="-fx-background-color: #2c3e50; -fx-padding: 15;">
             <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
@@ -41,7 +41,7 @@
                     <Region HBox.hgrow="ALWAYS" />
                     <Button onAction="#handleAddMenuItem" style="-fx-padding: 8 15; -fx-font-size: 11; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="+ Add Menu Item" />
                 </HBox>
-                <ScrollPane fitToWidth="true" prefHeight="350" style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 8;">
+                <ScrollPane fitToWidth="true" prefHeight="350" style="-fx-background-color: #E8F5E9; -fx-border-color: transparent; -fx-border-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);">
                     <GridPane fx:id="menuBox" hgap="15" vgap="15" style="-fx-padding: 10;" />
                 </ScrollPane>
             </VBox>
@@ -54,7 +54,7 @@
                 </HBox>
                 <TabPane style="-fx-font-size: 12;">
                     <Tab closable="false" text="Pending Orders">
-                        <TableView fx:id="pendingOrdersTable" style="-fx-font-size: 12;">
+                        <TableView fx:id="pendingOrdersTable" style="-fx-font-size: 12; -fx-background-color: #E8F5E9; -fx-border-radius: 8;">
                             <columns>
                                 <TableColumn prefWidth="150" text="Order ID" />
                                 <TableColumn prefWidth="150" text="Customer" />
@@ -67,7 +67,7 @@
                     </Tab>
 
                     <Tab closable="false" text="Confirmed Orders">
-                        <TableView fx:id="confirmedOrdersTable" style="-fx-font-size: 12;">
+                        <TableView fx:id="confirmedOrdersTable" style="-fx-font-size: 12; -fx-background-color: #E8F5E9; -fx-border-radius: 8;">
                             <columns>
                                 <TableColumn prefWidth="150" text="Order ID" />
                                 <TableColumn prefWidth="150" text="Customer" />

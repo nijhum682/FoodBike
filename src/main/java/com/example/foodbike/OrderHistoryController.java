@@ -38,7 +38,7 @@ public class OrderHistoryController {
     private void loadOrderHistory() {
         List<Order> userOrders = databaseService.getUserOrders(currentUser.getUsername());
         
-        // Auto-cancel pending orders older than 5 hours
+        // Auto-cancel pending orders older than 1 hour
         boolean hasAutoCancelled = false;
         for (Order order : userOrders) {
             if (order.shouldAutoCancelled()) {
@@ -72,7 +72,7 @@ public class OrderHistoryController {
         VBox card = new VBox();
         card.setSpacing(12);
         card.setPadding(new Insets(15));
-        card.setStyle("-fx-border-color: #ddd; -fx-border-radius: 8; -fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        card.setStyle("-fx-border-color: transparent; -fx-border-radius: 12; -fx-background-color: #87CEEB; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0, 0, 3);");
 
         HBox headerBox = new HBox();
         headerBox.setSpacing(10);
@@ -86,13 +86,13 @@ public class OrderHistoryController {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Label orderIdLabel = new Label("Order ID: " + order.getOrderId());
-        orderIdLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #7f8c8d;");
+        orderIdLabel.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
 
         headerBox.getChildren().addAll(statusLabel, spacer, orderIdLabel);
 
         Restaurant restaurant = databaseService.getRestaurant(order.getRestaurantId());
         Label restaurantLabel = new Label("Restaurant: " + (restaurant != null ? restaurant.getName() : "Unknown"));
-        restaurantLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #7f8c8d;");
+        restaurantLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
 
         StringBuilder itemsText = new StringBuilder("Items: ");
         for (int j = 0; j < order.getItems().size(); j++) {
@@ -103,17 +103,17 @@ public class OrderHistoryController {
             }
         }
         Label itemsLabel = new Label(itemsText.toString());
-        itemsLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #7f8c8d;");
+        itemsLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
         itemsLabel.setWrapText(true);
 
         Label priceLabel = new Label("Total: ৳" + String.format("%.2f", order.getTotalPrice()));
-        priceLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13; -fx-text-fill: #27ae60;");
+        priceLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #1B5E20;");
 
         Label dateLabel = new Label("Placed: " + order.getCreatedAt().toString().substring(0, 10) + " on " + order.getCreatedAt().toString().substring(11, 19));
-        dateLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #95a5a6;");
+        dateLabel.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #333333;");
         VBox stagesBox = new VBox();
         stagesBox.setSpacing(8);
-        stagesBox.setStyle("-fx-padding: 12; -fx-background-color: #f9f9f9; -fx-border-radius: 6; -fx-border-color: #e0e0e0;");
+        stagesBox.setStyle("-fx-padding: 12; -fx-background-color: #2E7D32; -fx-border-radius: 6; -fx-border-color: transparent;");
 
         String[] stages = {
             "✓ Your order is placed",
@@ -137,13 +137,13 @@ public class OrderHistoryController {
             Label stageLabel = new Label(stages[i]);
             String isCompleted = isStageCompleted(order.getStatus(), stageStatuses[i]);
             if (isCompleted.equals("completed")) {
-                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                stageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #FFFFFF; -fx-font-weight: bold;");
             } else if (isCompleted.equals("current")) {
-                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #3498db; -fx-font-weight: bold;");
+                stageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #FFD700; -fx-font-weight: bold;");
             } else if (isCompleted.equals("cancelled")) {
-                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                stageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #FF6B6B; -fx-font-weight: bold;");
             } else {
-                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #95a5a6;");
+                stageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #CCCCCC; -fx-font-weight: bold;");
             }
 
             Region stageSpacer = new Region();
@@ -176,6 +176,21 @@ public class OrderHistoryController {
             cancelBtn.setMaxWidth(Double.MAX_VALUE);
             cancelBtn.setOnAction(e -> handleCancelOrder(order, card));
             card.getChildren().add(cancelBtn);
+        }
+
+        if (order.getStatus() == Order.OrderStatus.DELIVERED) {
+            boolean hasReviewed = databaseService.hasUserReviewedOrder(currentUser.getUsername(), order.getOrderId());
+            if (!hasReviewed) {
+                javafx.scene.control.Button reviewBtn = new javafx.scene.control.Button("Write Review");
+                reviewBtn.setStyle("-fx-padding: 8 15; -fx-font-size: 11; -fx-background-color: #f39c12; -fx-text-fill: white; -fx-border-radius: 4; -fx-cursor: hand;");
+                reviewBtn.setMaxWidth(Double.MAX_VALUE);
+                reviewBtn.setOnAction(e -> handleWriteReview(order));
+                card.getChildren().add(reviewBtn);
+            } else {
+                Label reviewedLabel = new Label("✓ You have reviewed this order");
+                reviewedLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #27ae60; -fx-padding: 8;");
+                card.getChildren().add(reviewedLabel);
+            }
         }
 
         return card;
@@ -246,5 +261,73 @@ public class OrderHistoryController {
         if (currentStage != null) {
             currentStage.close();
         }
+    }
+
+    private void handleWriteReview(Order order) {
+        Restaurant restaurant = databaseService.getRestaurant(order.getRestaurantId());
+        if (restaurant == null) return;
+
+        javafx.scene.control.Dialog<javafx.scene.control.ButtonType> dialog = new javafx.scene.control.Dialog<>();
+        dialog.setTitle("Write Review");
+        dialog.setHeaderText("Review " + restaurant.getName());
+
+        VBox content = new VBox();
+        content.setSpacing(15);
+        content.setPadding(new Insets(20));
+
+        Label ratingLabel = new Label("Rating (1-5 stars):");
+        ratingLabel.setStyle("-fx-font-weight: bold;");
+
+        HBox starsBox = new HBox(10);
+        javafx.scene.control.ToggleGroup ratingGroup = new javafx.scene.control.ToggleGroup();
+        javafx.scene.control.RadioButton[] stars = new javafx.scene.control.RadioButton[5];
+
+        for (int i = 0; i < 5; i++) {
+            int starValue = i + 1;
+            stars[i] = new javafx.scene.control.RadioButton(starValue + " ★");
+            stars[i].setToggleGroup(ratingGroup);
+            stars[i].setStyle("-fx-font-size: 14;");
+            starsBox.getChildren().add(stars[i]);
+        }
+        stars[4].setSelected(true);
+
+        Label commentLabel = new Label("Comment:");
+        commentLabel.setStyle("-fx-font-weight: bold;");
+
+        javafx.scene.control.TextArea commentArea = new javafx.scene.control.TextArea();
+        commentArea.setPromptText("Share your experience...");
+        commentArea.setPrefRowCount(4);
+        commentArea.setWrapText(true);
+
+        content.getChildren().addAll(ratingLabel, starsBox, commentLabel, commentArea);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL);
+
+        dialog.showAndWait().ifPresent(response -> {
+            if (response == javafx.scene.control.ButtonType.OK) {
+                javafx.scene.control.RadioButton selectedRating = (javafx.scene.control.RadioButton) ratingGroup.getSelectedToggle();
+                if (selectedRating != null) {
+                    int rating = Integer.parseInt(selectedRating.getText().split(" ")[0]);
+                    String comment = commentArea.getText().trim();
+
+                    if (comment.isEmpty()) {
+                        comment = "No comment provided.";
+                    }
+
+                    String reviewId = "REV_" + System.currentTimeMillis();
+                    Review review = new Review(reviewId, restaurant.getId(), currentUser.getUsername(), order.getOrderId(), rating, comment);
+                    databaseService.addReview(review);
+
+                    Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                    successAlert.setTitle("Review Submitted");
+                    successAlert.setHeaderText(null);
+                    successAlert.setContentText("Thank you for your review! Your feedback helps others make better choices.");
+                    successAlert.showAndWait();
+
+                    loadOrderHistory();
+                }
+            }
+        });
     }
 }

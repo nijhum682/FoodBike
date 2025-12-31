@@ -194,7 +194,7 @@ public class EntrepreneurController {
         grid.setPadding(new Insets(20));
         
         TextField nameField = new TextField();
-        nameField.setPromptText("Restaurant Name");
+        nameField.setPromptText("Restaurant Name (e.g., Pakghor, Swaad Kutir, Amader Rannaghor, Khana Khazana)");
         nameField.setPrefWidth(250);
         
         ComboBox<String> divisionCombo = new ComboBox<>();
