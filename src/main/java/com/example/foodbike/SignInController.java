@@ -12,6 +12,7 @@ public class SignInController {
     @FXML private RadioButton adminRadio;
     @FXML private RadioButton userRadio;
     @FXML private RadioButton entrepreneurRadio;
+    @FXML private RadioButton bikerRadio;
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private TextField visiblePasswordField;
@@ -94,6 +95,8 @@ public class SignInController {
             return User.UserType.ADMIN;
         } else if (entrepreneurRadio.isSelected()) {
             return User.UserType.ENTREPRENEUR;
+        } else if (bikerRadio.isSelected()) {
+            return User.UserType.BIKER;
         } else {
             return User.UserType.USER;
         }
@@ -110,9 +113,12 @@ public class SignInController {
             } else if (user.getUserType() == User.UserType.USER) {
                 fxmlLoader = new FXMLLoader(getClass().getResource("restaurant-view.fxml"));
                 title = "FoodBike - Restaurants";
-            } else {
+            } else if (user.getUserType() == User.UserType.ENTREPRENEUR) {
                 fxmlLoader = new FXMLLoader(getClass().getResource("entrepreneur-view.fxml"));
                 title = "FoodBike - Entrepreneur Dashboard";
+            } else if (user.getUserType() == User.UserType.BIKER) {
+                fxmlLoader = new FXMLLoader(getClass().getResource("biker-view.fxml"));
+                title = "FoodBike - Biker Dashboard";
             }
 
             Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
@@ -128,6 +134,9 @@ public class SignInController {
                 controller.setCurrentUser(user);
             } else if (user.getUserType() == User.UserType.ENTREPRENEUR) {
                 EntrepreneurController controller = fxmlLoader.getController();
+                controller.setCurrentUser(user);
+            } else if (user.getUserType() == User.UserType.BIKER) {
+                BikerController controller = fxmlLoader.getController();
                 controller.setCurrentUser(user);
             }
         } catch (IOException e) {

@@ -67,8 +67,18 @@ public class DatabaseService {
         if (ordersFile.exists()) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(ordersFile))) {
                 orders = (Map<String, Order>) ois.readObject();
+                System.out.println("Successfully loaded " + orders.size() + " orders from file.");
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Error loading orders file: " + e.getMessage());
+                e.printStackTrace();
+                // Try to create backup before clearing
+                try {
+                    File backup = new File("orders_backup_" + System.currentTimeMillis() + ".dat");
+                    java.nio.file.Files.copy(ordersFile.toPath(), backup.toPath());
+                    System.out.println("Created backup: " + backup.getName());
+                } catch (IOException backupError) {
+                    System.out.println("Could not create backup: " + backupError.getMessage());
+                }
                 orders = new HashMap<>();
             }
         }
@@ -299,6 +309,10 @@ public class DatabaseService {
             }
         }
         return restaurantOrders;
+    }
+
+    public List<Order> getAllOrders() {
+        return new ArrayList<>(orders.values());
     }
 
     public void submitApplication(RestaurantApplication application) {

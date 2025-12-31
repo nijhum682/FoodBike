@@ -34,6 +34,7 @@
                     </RadioButton>
                     <RadioButton fx:id="userRadio" style="-fx-font-size: 14;" text="User" toggleGroup="$userTypeGroup" />
                     <RadioButton fx:id="entrepreneurRadio" style="-fx-font-size: 14;" text="Entrepreneur" toggleGroup="$userTypeGroup" />
+                    <RadioButton fx:id="bikerRadio" style="-fx-font-size: 14;" text="Biker" toggleGroup="$userTypeGroup" />
                 </HBox>
                 
                 <Separator style="-fx-padding: 10 0;" />

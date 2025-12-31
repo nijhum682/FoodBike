@@ -9,7 +9,7 @@ public class Order implements Serializable {
     private static final long serialVersionUID = 1L;
     
     public enum OrderStatus {
-        PENDING, CONFIRMED, PREPARING, READY, DELIVERED, CANCELLED
+        PENDING, CONFIRMED, PREPARING, READY, DELIVERED, CANCELLED, AUTO_CANCELLED
     }
 
     private String orderId;
@@ -19,6 +19,7 @@ public class Order implements Serializable {
     private double totalPrice;
     private OrderStatus status;
     private LocalDateTime createdAt;
+    private String bikerId;
 
     public Order(String orderId, String userId, String restaurantId) {
         this.orderId = orderId;
@@ -85,5 +86,21 @@ public class Order implements Serializable {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public String getBikerId() {
+        return bikerId;
+    }
+    
+    public void setBikerId(String bikerId) {
+        this.bikerId = bikerId;
+    }
+    
+    public boolean shouldAutoCancelled() {
+        if (this.status == OrderStatus.PENDING && this.createdAt != null) {
+            LocalDateTime fiveHoursAgo = LocalDateTime.now().minusHours(5);
+            return this.createdAt.isBefore(fiveHoursAgo);
+        }
+        return false;
     }
 }

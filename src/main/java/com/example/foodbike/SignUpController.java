@@ -13,6 +13,7 @@ public class SignUpController {
     @FXML private RadioButton adminTypeRadio;
     @FXML private RadioButton userTypeRadio;
     @FXML private RadioButton entrepreneurTypeRadio;
+    @FXML private RadioButton bikerTypeRadio;
     @FXML private TextField emailField;
     @FXML private TextField phoneField;
     @FXML private TextField usernameField;
@@ -153,6 +154,8 @@ public class SignUpController {
             return User.UserType.ADMIN;
         } else if (entrepreneurTypeRadio.isSelected()) {
             return User.UserType.ENTREPRENEUR;
+        } else if (bikerTypeRadio.isSelected()) {
+            return User.UserType.BIKER;
         } else {
             return User.UserType.USER;
         }

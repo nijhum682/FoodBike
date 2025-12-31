@@ -1,0 +1,405 @@
+package com.example.foodbike;
+
+import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BikerController {
+    @FXML private TableView<Order> readyOrdersTable;
+    @FXML private TableView<Order> deliveredOrdersTable;
+    @FXML private Label userLabel;
+    @FXML private ComboBox<String> divisionFilter;
+
+    private User currentUser;
+    private DatabaseService databaseService;
+    private List<Order> allReadyOrders = new ArrayList<>();
+
+    @FXML
+    public void initialize() {
+        databaseService = DatabaseService.getInstance();
+        setupReadyOrdersTable();
+        setupDeliveredOrdersTable();
+        setupDivisionFilter();
+    }
+
+    private void setupDivisionFilter() {
+        divisionFilter.getItems().add("All Locations");
+        divisionFilter.getItems().addAll("Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh");
+        divisionFilter.setValue("All Locations");
+        divisionFilter.setOnAction(e -> filterOrders());
+    }
+
+    private void filterOrders() {
+        String selectedDivision = divisionFilter.getValue();
+        if (selectedDivision.equals("All Locations")) {
+            readyOrdersTable.getItems().setAll(allReadyOrders);
+        } else {
+            List<Order> filtered = new ArrayList<>();
+            for (Order order : allReadyOrders) {
+                Restaurant restaurant = databaseService.getRestaurant(order.getRestaurantId());
+                if (restaurant != null && restaurant.getDivision().equals(selectedDivision)) {
+                    filtered.add(order);
+                }
+            }
+            readyOrdersTable.getItems().setAll(filtered);
+        }
+        readyOrdersTable.refresh();
+    }
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        userLabel.setText("Welcome, " + user.getUsername());
+        loadOrders();
+    }
+
+    private void setupReadyOrdersTable() {
+        TableColumn<Order, String> orderIdCol = new TableColumn<>("Order ID");
+        orderIdCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getOrderId()));
+        orderIdCol.setPrefWidth(150);
+
+        TableColumn<Order, String> restaurantCol = new TableColumn<>("Restaurant");
+        restaurantCol.setCellValueFactory(data -> {
+            Restaurant restaurant = databaseService.getRestaurant(data.getValue().getRestaurantId());
+            return new javafx.beans.property.SimpleStringProperty(restaurant != null ? restaurant.getName() : "Unknown");
+        });
+        restaurantCol.setPrefWidth(150);
+
+        TableColumn<Order, String> locationCol = new TableColumn<>("Location");
+        locationCol.setCellValueFactory(data -> {
+            Restaurant restaurant = databaseService.getRestaurant(data.getValue().getRestaurantId());
+            return new javafx.beans.property.SimpleStringProperty(restaurant != null ? restaurant.getDivision() : "Unknown");
+        });
+        locationCol.setPrefWidth(120);
+
+        TableColumn<Order, String> customerCol = new TableColumn<>("Customer");
+        customerCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getUserId()));
+        customerCol.setPrefWidth(120);
+
+        TableColumn<Order, String> itemsCol = new TableColumn<>("Items");
+        itemsCol.setCellValueFactory(data -> {
+            int itemCount = data.getValue().getItems().size();
+            return new javafx.beans.property.SimpleStringProperty(itemCount + " item(s)");
+        });
+        itemsCol.setPrefWidth(100);
+
+        TableColumn<Order, String> totalCol = new TableColumn<>("Total");
+        totalCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty("৳" + String.format("%.2f", data.getValue().getTotalPrice())));
+        totalCol.setPrefWidth(100);
+
+        TableColumn<Order, Void> actionCol = new TableColumn<>("Action");
+        actionCol.setPrefWidth(180);
+        actionCol.setCellFactory(col -> new TableCell<Order, Void>() {
+            private final Button statusBtn = new Button("Order Status");
+
+            {
+                statusBtn.setStyle("-fx-padding: 5 10; -fx-font-size: 11; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;");
+                statusBtn.setOnAction(e -> {
+                    Order order = getTableView().getItems().get(getIndex());
+                    handleOrderStatus(order);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(statusBtn);
+                }
+            }
+        });
+
+        readyOrdersTable.getColumns().addAll(orderIdCol, restaurantCol, locationCol, customerCol, itemsCol, totalCol, actionCol);
+    }
+
+    private void setupDeliveredOrdersTable() {
+        TableColumn<Order, String> orderIdCol = new TableColumn<>("Order ID");
+        orderIdCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getOrderId()));
+        orderIdCol.setPrefWidth(150);
+
+        TableColumn<Order, String> restaurantCol = new TableColumn<>("Restaurant");
+        restaurantCol.setCellValueFactory(data -> {
+            Restaurant restaurant = databaseService.getRestaurant(data.getValue().getRestaurantId());
+            return new javafx.beans.property.SimpleStringProperty(restaurant != null ? restaurant.getName() : "Unknown");
+        });
+        restaurantCol.setPrefWidth(150);
+
+        TableColumn<Order, String> customerCol = new TableColumn<>("Customer");
+        customerCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getUserId()));
+        customerCol.setPrefWidth(120);
+
+        TableColumn<Order, String> itemsCol = new TableColumn<>("Items");
+        itemsCol.setCellValueFactory(data -> {
+            int itemCount = data.getValue().getItems().size();
+            return new javafx.beans.property.SimpleStringProperty(itemCount + " item(s)");
+        });
+        itemsCol.setPrefWidth(100);
+
+        TableColumn<Order, String> totalCol = new TableColumn<>("Total");
+        totalCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty("৳" + String.format("%.2f", data.getValue().getTotalPrice())));
+        totalCol.setPrefWidth(100);
+
+        TableColumn<Order, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getStatus().toString()));
+        statusCol.setPrefWidth(150);
+        statusCol.setCellFactory(col -> new TableCell<Order, String>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    Order order = getTableView().getItems().get(getIndex());
+                    if (order.getStatus() == Order.OrderStatus.DELIVERED) {
+                        setText("✓✓ " + status);
+                        setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                    } else {
+                        setText(status);
+                        setStyle("");
+                    }
+                }
+            }
+        });
+
+        deliveredOrdersTable.getColumns().addAll(orderIdCol, restaurantCol, customerCol, itemsCol, totalCol, statusCol);
+    }
+
+    private void loadOrders() {
+        List<Order> allOrders = databaseService.getAllOrders();
+
+        List<Order> readyOrders = new ArrayList<>();
+        List<Order> deliveredOrders = new ArrayList<>();
+
+        for (Order order : allOrders) {
+            if (order.getStatus() == Order.OrderStatus.READY) {
+                if (order.getBikerId() == null || order.getBikerId().equals(currentUser.getUsername())) {
+                    readyOrders.add(order);
+                }
+            } else if (order.getStatus() == Order.OrderStatus.DELIVERED) {
+                if (order.getBikerId() != null && order.getBikerId().equals(currentUser.getUsername())) {
+                    deliveredOrders.add(order);
+                }
+            }
+        }
+
+        readyOrders.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+        deliveredOrders.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+
+        allReadyOrders = readyOrders;
+        filterOrders();
+        deliveredOrdersTable.getItems().setAll(deliveredOrders);
+
+        deliveredOrdersTable.refresh();
+        deliveredOrdersTable.refresh();
+    }
+
+    private void handleOrderStatus(Order order) {
+        Dialog<ButtonType> statusDialog = new Dialog<>();
+        statusDialog.setTitle("Order Status Management");
+        statusDialog.setHeaderText("Deliver Order: " + order.getOrderId());
+
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setStyle("-fx-background-color: white;");
+
+        Restaurant restaurant = databaseService.getRestaurant(order.getRestaurantId());
+        
+        // Restaurant location info - prominently displayed
+        Label locationLabel = new Label("📍 Location: " + (restaurant != null ? restaurant.getDivision() : "Unknown"));
+        locationLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #27ae60;");
+        
+        Label restaurantLabel = new Label("Restaurant: " + (restaurant != null ? restaurant.getName() : "Unknown"));
+        restaurantLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold;");
+
+        Label customerLabel = new Label("Customer: " + order.getUserId());
+        customerLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold;");
+
+        Label totalLabel = new Label("Total: ৳" + String.format("%.2f", order.getTotalPrice()));
+        totalLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+
+        VBox stagesBox = new VBox();
+        stagesBox.setSpacing(8);
+        stagesBox.setStyle("-fx-padding: 12; -fx-background-color: #f9f9f9; -fx-border-radius: 6; -fx-border-color: #e0e0e0;");
+
+        Label stagesTitle = new Label("Order Stages:");
+        stagesTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 12;");
+        stagesBox.getChildren().add(stagesTitle);
+
+        String[] stages = {
+            "✓ Order is placed",
+            "🍽 Order is confirmed by restaurant",
+            "🚴 Biker is on the way to deliver your order",
+            "📦 Delivery is completed"
+        };
+
+        Order.OrderStatus[] stageStatuses = {
+            Order.OrderStatus.PENDING,
+            Order.OrderStatus.CONFIRMED,
+            Order.OrderStatus.READY,
+            Order.OrderStatus.DELIVERED
+        };
+
+        for (int i = 0; i < stages.length; i++) {
+            HBox stageRow = new HBox();
+            stageRow.setSpacing(10);
+            stageRow.setStyle("-fx-padding: 8; -fx-alignment: center-left;");
+
+            Label stageLabel = new Label(stages[i]);
+            String isCompleted = getStageStatus(order.getStatus(), stageStatuses[i]);
+            if (isCompleted.equals("completed")) {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+            } else if (isCompleted.equals("current")) {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #3498db; -fx-font-weight: bold;");
+            } else {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #95a5a6;");
+            }
+
+            Region stageSpacer = new Region();
+            HBox.setHgrow(stageSpacer, Priority.ALWAYS);
+
+            Label tickBox = new Label();
+            if (isCompleted.equals("completed")) {
+                tickBox.setText("☑");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+            } else if (isCompleted.equals("current")) {
+                tickBox.setText("☑");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #3498db;");
+            } else {
+                tickBox.setText("");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #95a5a6;");
+            }
+
+            stageRow.getChildren().addAll(stageLabel, stageSpacer, tickBox);
+            stagesBox.getChildren().add(stageRow);
+        }
+
+        content.getChildren().addAll(locationLabel, restaurantLabel, customerLabel, totalLabel, stagesBox);
+
+        statusDialog.getDialogPane().setContent(content);
+        statusDialog.getDialogPane().setPrefWidth(450);
+
+        if (order.getStatus() == Order.OrderStatus.READY && (order.getBikerId() == null || !order.getBikerId().equals(currentUser.getUsername()))) {
+            ButtonType confirmBtn = new ButtonType("Confirm Delivery", ButtonBar.ButtonData.OK_DONE);
+            ButtonType declineBtn = new ButtonType("Decline Order", ButtonBar.ButtonData.OTHER);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            statusDialog.getDialogPane().getButtonTypes().setAll(confirmBtn, declineBtn, cancelButton);
+
+            statusDialog.showAndWait().ifPresent(response -> {
+                if (response == confirmBtn) {
+                    confirmOrder(order, restaurant);
+                } else if (response == declineBtn) {
+                    declineOrder(order);
+                }
+            });
+        } else {
+            ButtonType deliverBtn = new ButtonType("Mark as Delivered", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            statusDialog.getDialogPane().getButtonTypes().setAll(deliverBtn, cancelButton);
+
+            statusDialog.showAndWait().ifPresent(response -> {
+                if (response == deliverBtn) {
+                    markAsDelivered(order);
+                }
+            });
+        }
+    }
+
+    private String getStageStatus(Order.OrderStatus currentStatus, Order.OrderStatus stageStatus) {
+        if (currentStatus == Order.OrderStatus.DELIVERED) {
+            return "completed";
+        }
+        if (currentStatus.ordinal() > stageStatus.ordinal()) {
+            return "completed";
+        } else if (currentStatus == stageStatus) {
+            return "current";
+        }
+        return "pending";
+    }
+
+    private void markAsDelivered(Order order) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Mark as Delivered");
+        confirmAlert.setHeaderText("Confirm Delivery: " + order.getOrderId());
+        confirmAlert.setContentText("Are you sure you want to mark this order as delivered?");
+
+        confirmAlert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                order.setStatus(Order.OrderStatus.DELIVERED);
+                databaseService.saveDataToFiles();
+                loadOrders();
+                
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                successAlert.setTitle("Success");
+                successAlert.setHeaderText(null);
+                successAlert.setContentText("Order marked as delivered successfully!");
+                successAlert.showAndWait();
+            }
+        });
+    }
+
+    private void confirmOrder(Order order, Restaurant restaurant) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Delivery");
+        confirmAlert.setHeaderText("Accept Delivery Task");
+        confirmAlert.setContentText("Do you want to confirm delivery for this order from " + 
+                                   (restaurant != null ? restaurant.getName() : "Unknown Restaurant") + 
+                                   "?\n\nLocation: " + (restaurant != null ? restaurant.getDivision() : "Unknown"));
+
+        confirmAlert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                order.setBikerId(currentUser.getUsername());
+                databaseService.saveDataToFiles();
+                loadOrders();
+                
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                successAlert.setTitle("Success");
+                successAlert.setHeaderText(null);
+                successAlert.setContentText("You have confirmed the delivery task!\n\nPlease pick up the order and deliver it to the customer.");
+                successAlert.showAndWait();
+            }
+        });
+    }
+
+    private void declineOrder(Order order) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Decline Order");
+        confirmAlert.setHeaderText("Decline Delivery Task");
+        confirmAlert.setContentText("Are you sure you want to decline this delivery?\n\nThe order will remain available for other bikers.");
+
+        confirmAlert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                // Order remains READY for other bikers
+                Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
+                infoAlert.setTitle("Declined");
+                infoAlert.setHeaderText(null);
+                infoAlert.setContentText("You have declined this delivery task.\n\nThe order remains available for other bikers.");
+                infoAlert.showAndWait();
+            }
+        });
+    }
+
+    @FXML
+    public void handleLogout() {
+        try {
+            javafx.fxml.FXMLLoader fxmlLoader = new javafx.fxml.FXMLLoader(getClass().getResource("signin-view.fxml"));
+            javafx.scene.Scene scene = new javafx.scene.Scene(fxmlLoader.load(), 600, 700);
+            Stage stage = (Stage) userLabel.getScene().getWindow();
+            stage.setTitle("FoodBike - Sign In");
+            stage.setScene(scene);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

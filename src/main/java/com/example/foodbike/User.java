@@ -6,7 +6,7 @@ public class User implements Serializable {
     private static final long serialVersionUID = 1L;
     
     public enum UserType {
-        ADMIN, USER, ENTREPRENEUR
+        ADMIN, USER, ENTREPRENEUR, BIKER
     }
 
     private String username;

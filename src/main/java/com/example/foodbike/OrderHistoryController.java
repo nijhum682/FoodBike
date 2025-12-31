@@ -11,6 +11,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,7 +28,6 @@ public class OrderHistoryController {
     public void initialize() {
         databaseService = DatabaseService.getInstance();
     }
-
     public void setCurrentUser(User user, Stage stage) {
         this.currentUser = user;
         this.currentStage = stage;
@@ -37,6 +37,18 @@ public class OrderHistoryController {
 
     private void loadOrderHistory() {
         List<Order> userOrders = databaseService.getUserOrders(currentUser.getUsername());
+        
+        // Auto-cancel pending orders older than 5 hours
+        boolean hasAutoCancelled = false;
+        for (Order order : userOrders) {
+            if (order.shouldAutoCancelled()) {
+                order.setStatus(Order.OrderStatus.AUTO_CANCELLED);
+                hasAutoCancelled = true;
+            }
+        }
+        if (hasAutoCancelled) {
+            databaseService.saveDataToFiles();
+        }
 
         userOrders = userOrders.stream()
                 .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
@@ -105,7 +117,7 @@ public class OrderHistoryController {
 
         String[] stages = {
             "✓ Your order is placed",
-            "🍽️ Order is confirmed by restaurant",
+            "🍽 Order is confirmed by restaurant",
             "🚴 Biker is on the way to deliver your order",
             "📦 Your delivery is completed"
         };
@@ -128,6 +140,8 @@ public class OrderHistoryController {
                 stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
             } else if (isCompleted.equals("current")) {
                 stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #3498db; -fx-font-weight: bold;");
+            } else if (isCompleted.equals("cancelled")) {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
             } else {
                 stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #95a5a6;");
             }
@@ -140,8 +154,11 @@ public class OrderHistoryController {
                 tickBox.setText("☑");
                 tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
             } else if (isCompleted.equals("current")) {
-                tickBox.setText("◐");
+                tickBox.setText("☑");
                 tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #3498db;");
+            } else if (isCompleted.equals("cancelled")) {
+                tickBox.setText("✗");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
             } else {
                 tickBox.setText("");
                 tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #95a5a6;");
@@ -167,6 +184,10 @@ public class OrderHistoryController {
     private String isStageCompleted(Order.OrderStatus currentStatus, Order.OrderStatus stageStatus) {
         if (currentStatus == Order.OrderStatus.CANCELLED) {
             return "pending";
+        }
+        if (currentStatus == Order.OrderStatus.AUTO_CANCELLED) {
+            // For auto-cancelled orders, all stages show as cancelled with red cross marks
+            return "cancelled";
         }
         if (currentStatus == Order.OrderStatus.DELIVERED) {
             return "completed";
@@ -213,6 +234,8 @@ public class OrderHistoryController {
                 return "✓✓";
             case CANCELLED:
                 return "✗";
+            case AUTO_CANCELLED:
+                return "⌛";
             default:
                 return "❓";
         }

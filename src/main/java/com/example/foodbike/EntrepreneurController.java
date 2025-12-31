@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -83,7 +84,7 @@ public class EntrepreneurController {
         restaurantInfoBox.setManaged(true);
         
         VBox infoCard = new VBox(8);
-        infoCard.setStyle("-fx-border-color: #27ae60; -fx-border-width: 2; -fx-border-radius: 6; -fx-padding: 15; -fx-background-color: #d4edda;");
+        infoCard.setStyle("-fx-border-color: #27ae60; -fx-border-width: 2; -fx-border-radius: 6; -fx-padding: 15; -fx-background-color: #d4edda; -fx-alignment: center;");
         
         Label nameLabel = new Label("✓ " + restaurant.getName());
         nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 18; -fx-text-fill: #155724;");
@@ -356,17 +357,39 @@ public class EntrepreneurController {
         TableColumn<Order, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getStatus().toString()));
         statusCol.setPrefWidth(100);
+        statusCol.setCellFactory(col -> new TableCell<Order, String>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    Order order = getTableView().getItems().get(getIndex());
+                    if (order.getStatus() == Order.OrderStatus.AUTO_CANCELLED) {
+                        setText("✗ " + status);
+                        setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                    } else if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+                        setText("✗ " + status);
+                        setStyle("-fx-text-fill: #e74c3c;");
+                    } else {
+                        setText(status);
+                        setStyle("");
+                    }
+                }
+            }
+        });
         
         TableColumn<Order, Void> actionCol = new TableColumn<>("Action");
         actionCol.setPrefWidth(150);
         actionCol.setCellFactory(col -> new TableCell<Order, Void>() {
-            private final Button approveBtn = new Button("Approve");
+            private final Button statusBtn = new Button("Order Status");
             
             {
-                approveBtn.setStyle("-fx-padding: 5 10; -fx-font-size: 11; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;");
-                approveBtn.setOnAction(e -> {
+                statusBtn.setStyle("-fx-padding: 5 10; -fx-font-size: 11; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;");
+                statusBtn.setOnAction(e -> {
                     Order order = getTableView().getItems().get(getIndex());
-                    approveOrder(order);
+                    handleOrderStatus(order);
                 });
             }
             
@@ -376,7 +399,7 @@ public class EntrepreneurController {
                 if (empty) {
                     setGraphic(null);
                 } else {
-                    setGraphic(approveBtn);
+                    setGraphic(statusBtn);
                 }
             }
         });
@@ -407,8 +430,67 @@ public class EntrepreneurController {
         TableColumn<Order, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getStatus().toString()));
         statusCol.setPrefWidth(150);
+        statusCol.setCellFactory(col -> new TableCell<Order, String>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    Order order = getTableView().getItems().get(getIndex());
+                    if (order.getStatus() == Order.OrderStatus.AUTO_CANCELLED) {
+                        setText("✗ " + status);
+                        setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                    } else if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+                        setText("✗ " + status);
+                        setStyle("-fx-text-fill: #e74c3c;");
+                    } else if (order.getStatus() == Order.OrderStatus.DELIVERED) {
+                        setText("✓✓ " + status);
+                        setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                    } else if (order.getStatus() == Order.OrderStatus.CONFIRMED) {
+                        setText("✓ " + status);
+                        setStyle("-fx-text-fill: #27ae60;");
+                    } else {
+                        setText(status);
+                        setStyle("");
+                    }
+                }
+            }
+        });
         
-        confirmedOrdersTable.getColumns().addAll(orderIdCol, customerCol, itemsCol, totalCol, statusCol);
+        TableColumn<Order, Void> actionCol = new TableColumn<>("Action");
+        actionCol.setPrefWidth(150);
+        actionCol.setCellFactory(col -> new TableCell<Order, Void>() {
+            private final Button statusBtn = new Button("Order Status");
+            
+            {
+                statusBtn.setStyle("-fx-padding: 5 10; -fx-font-size: 11; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;");
+                statusBtn.setOnAction(e -> {
+                    Order order = getTableView().getItems().get(getIndex());
+                    handleOrderStatus(order);
+                });
+            }
+            
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    Order order = getTableView().getItems().get(getIndex());
+                    if (order.getStatus() == Order.OrderStatus.CONFIRMED || 
+                        order.getStatus() == Order.OrderStatus.READY ||
+                        order.getStatus() == Order.OrderStatus.DELIVERED) {
+                        setGraphic(statusBtn);
+                    } else {
+                        setGraphic(null);
+                    }
+                }
+            }
+        });
+        
+        confirmedOrdersTable.getColumns().addAll(orderIdCol, customerCol, itemsCol, totalCol, statusCol, actionCol);
     }
     
     private void loadOrders() {
@@ -417,6 +499,18 @@ public class EntrepreneurController {
         }
         
         List<Order> allOrders = databaseService.getRestaurantOrders(myRestaurant.getId());
+        
+        // Auto-cancel pending orders older than 5 hours
+        boolean hasAutoCancelled = false;
+        for (Order order : allOrders) {
+            if (order.shouldAutoCancelled()) {
+                order.setStatus(Order.OrderStatus.AUTO_CANCELLED);
+                hasAutoCancelled = true;
+            }
+        }
+        if (hasAutoCancelled) {
+            databaseService.saveDataToFiles();
+        }
         
         List<Order> pendingOrders = new ArrayList<>();
         List<Order> confirmedOrders = new ArrayList<>();
@@ -429,8 +523,155 @@ public class EntrepreneurController {
             }
         }
         
+        // Sort by creation date (newest first)
+        pendingOrders.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+        confirmedOrders.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+        
         pendingOrdersTable.getItems().setAll(pendingOrders);
         confirmedOrdersTable.getItems().setAll(confirmedOrders);
+        
+        // Refresh tables
+        pendingOrdersTable.refresh();
+        confirmedOrdersTable.refresh();
+    }
+    
+    private void handleOrderStatus(Order order) {
+        Dialog<ButtonType> statusDialog = new Dialog<>();
+        statusDialog.setTitle("Order Status Management");
+        statusDialog.setHeaderText("Manage Order: " + order.getOrderId());
+        
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setStyle("-fx-background-color: white;");
+        
+        Label customerLabel = new Label("Customer: " + order.getUserId());
+        customerLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold;");
+        
+        Label totalLabel = new Label("Total: ৳" + String.format("%.2f", order.getTotalPrice()));
+        totalLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+        
+        VBox stagesBox = new VBox();
+        stagesBox.setSpacing(8);
+        stagesBox.setStyle("-fx-padding: 12; -fx-background-color: #f9f9f9; -fx-border-radius: 6; -fx-border-color: #e0e0e0;");
+        
+        Label stagesTitle = new Label("Order Stages:");
+        stagesTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 12;");
+        stagesBox.getChildren().add(stagesTitle);
+        
+        String[] stages = {
+            "✓ Order is placed",
+            "🍽 Order is confirmed by restaurant",
+            "🚴 Biker is on the way to deliver your order",
+            "📦 Delivery is completed"
+        };
+        
+        Order.OrderStatus[] stageStatuses = {
+            Order.OrderStatus.PENDING,
+            Order.OrderStatus.CONFIRMED,
+            Order.OrderStatus.READY,
+            Order.OrderStatus.DELIVERED
+        };
+        
+        for (int i = 0; i < stages.length; i++) {
+            HBox stageRow = new HBox();
+            stageRow.setSpacing(10);
+            stageRow.setStyle("-fx-padding: 8; -fx-alignment: center-left;");
+            
+            Label stageLabel = new Label(stages[i]);
+            String isCompleted = getStageStatus(order.getStatus(), stageStatuses[i]);
+            if (isCompleted.equals("completed")) {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+            } else if (isCompleted.equals("current")) {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #3498db; -fx-font-weight: bold;");
+            } else if (isCompleted.equals("cancelled")) {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+            } else {
+                stageLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #95a5a6;");
+            }
+            
+            Region stageSpacer = new Region();
+            HBox.setHgrow(stageSpacer, Priority.ALWAYS);
+            
+            Label tickBox = new Label();
+            if (isCompleted.equals("completed")) {
+                tickBox.setText("☑");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
+            } else if (isCompleted.equals("current")) {
+                tickBox.setText("☑");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #3498db;");
+            } else if (isCompleted.equals("cancelled")) {
+                tickBox.setText("✗");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+            } else {
+                tickBox.setText("");
+                tickBox.setStyle("-fx-font-size: 14; -fx-text-fill: #95a5a6;");
+            }
+            
+            stageRow.getChildren().addAll(stageLabel, stageSpacer, tickBox);
+            stagesBox.getChildren().add(stageRow);
+        }
+        
+        content.getChildren().addAll(customerLabel, totalLabel, stagesBox);
+        
+        statusDialog.getDialogPane().setContent(content);
+        statusDialog.getDialogPane().setPrefWidth(450);
+        
+        ButtonType approveBtn = new ButtonType("Approve Order", ButtonBar.ButtonData.OK_DONE);
+        ButtonType readyBtn = new ButtonType("Mark Food Ready", ButtonBar.ButtonData.OK_DONE);
+        ButtonType declineBtn = new ButtonType("Decline Order", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        
+        if (order.getStatus() == Order.OrderStatus.PENDING) {
+            statusDialog.getDialogPane().getButtonTypes().setAll(approveBtn, declineBtn, cancelButton);
+        } else if (order.getStatus() == Order.OrderStatus.CONFIRMED) {
+            statusDialog.getDialogPane().getButtonTypes().setAll(readyBtn, cancelButton);
+        } else {
+            statusDialog.getDialogPane().getButtonTypes().setAll(cancelButton);
+        }
+        
+        Optional<ButtonType> result = statusDialog.showAndWait();
+        if (result.isPresent()) {
+            if (result.get() == approveBtn) {
+                approveOrder(order);
+            } else if (result.get() == declineBtn) {
+                declineOrder(order);
+            } else if (result.get() == readyBtn) {
+                markOrderReady(order);
+            }
+        }
+    }
+    
+    private String getStageStatus(Order.OrderStatus currentStatus, Order.OrderStatus stageStatus) {
+        if (currentStatus == Order.OrderStatus.CANCELLED) {
+            return "pending";
+        }
+        if (currentStatus == Order.OrderStatus.AUTO_CANCELLED) {
+            return "cancelled";
+        }
+        if (currentStatus == Order.OrderStatus.DELIVERED) {
+            return "completed";
+        }
+        if (currentStatus.ordinal() > stageStatus.ordinal()) {
+            return "completed";
+        } else if (currentStatus == stageStatus) {
+            return "current";
+        }
+        return "pending";
+    }
+    
+    private void declineOrder(Order order) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Decline Order");
+        confirmAlert.setHeaderText("Decline Order: " + order.getOrderId());
+        confirmAlert.setContentText("Are you sure you want to decline this order? This will cancel the order.");
+        
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            order.setStatus(Order.OrderStatus.CANCELLED);
+            databaseService.saveDataToFiles();
+            loadOrders();
+            showAlert("Order Declined", "Order Cancelled", "Order has been declined and cancelled.");
+        }
     }
     
     private void approveOrder(Order order) {
@@ -445,6 +686,21 @@ public class EntrepreneurController {
             databaseService.saveDataToFiles();
             loadOrders();
             showAlert("Success", "Order Approved", "Order has been confirmed successfully!");
+        }
+    }
+    
+    private void markOrderReady(Order order) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Mark Order Ready");
+        confirmAlert.setHeaderText("Mark Order as Ready: " + order.getOrderId());
+        confirmAlert.setContentText("Is the food ready? This will notify that biker is on the way.");
+        
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            order.setStatus(Order.OrderStatus.READY);
+            databaseService.saveDataToFiles();
+            loadOrders();
+            showAlert("Success", "Order Ready", "Order marked as ready! Biker is on the way to deliver.");
         }
     }
 }
