@@ -157,12 +157,116 @@ public class MenuController {
             }
         }
 
-        databaseService.createOrder(order);
+        if (showPaymentMethodDialog(order)) {
+            databaseService.createOrder(order);
+            showOrderConfirmationDialog(order);
+            selectedItems.clear();
+            updateOrderSummary();
+        }
+    }
 
-        showOrderConfirmationDialog(order);
+    private boolean showPaymentMethodDialog(Order order) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Select Payment Method");
+        dialog.setHeaderText("Choose your payment method");
 
-        selectedItems.clear();
-        updateOrderSummary();
+        VBox content = new VBox();
+        content.setSpacing(15);
+        content.setPadding(new Insets(20));
+
+        Label totalLabel = new Label("Total Amount: ৳" + String.format("%.2f", order.getTotalPrice()));
+        totalLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        ToggleGroup paymentGroup = new ToggleGroup();
+
+        RadioButton bkashRadio = new RadioButton("Bkash");
+        bkashRadio.setToggleGroup(paymentGroup);
+        bkashRadio.setStyle("-fx-font-size: 14;");
+
+        RadioButton nagadRadio = new RadioButton("Nagad");
+        nagadRadio.setToggleGroup(paymentGroup);
+        nagadRadio.setStyle("-fx-font-size: 14;");
+
+        RadioButton codRadio = new RadioButton("Cash on Delivery");
+        codRadio.setToggleGroup(paymentGroup);
+        codRadio.setStyle("-fx-font-size: 14;");
+
+        bkashRadio.setSelected(true);
+
+        content.getChildren().addAll(totalLabel, bkashRadio, nagadRadio, codRadio);
+
+        dialog.getDialogPane().setContent(content);
+        ButtonType confirmButton = new ButtonType("Proceed", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(confirmButton, cancelButton);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+
+        if (result.isPresent() && result.get() == confirmButton) {
+            RadioButton selected = (RadioButton) paymentGroup.getSelectedToggle();
+            String paymentMethod = selected.getText();
+
+            if (paymentMethod.equals("Bkash") || paymentMethod.equals("Nagad")) {
+                boolean success = processMobilePayment(paymentMethod);
+                if (success) {
+                    order.setPaymentMethod(paymentMethod);
+                }
+                return success;
+            } else {
+                order.setPaymentMethod("Cash on Delivery");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean processMobilePayment(String paymentMethod) {
+        TextInputDialog mobileDialog = new TextInputDialog();
+        mobileDialog.setTitle(paymentMethod + " Payment");
+        mobileDialog.setHeaderText("Enter your " + paymentMethod + " mobile number");
+        mobileDialog.setContentText("Mobile Number:");
+
+        Optional<String> mobileResult = mobileDialog.showAndWait();
+
+        if (mobileResult.isPresent() && !mobileResult.get().trim().isEmpty()) {
+            String mobile = mobileResult.get().trim();
+
+            int randomOTP = 10000 + new Random().nextInt(90000);
+
+            Alert otpAlert = new Alert(Alert.AlertType.INFORMATION);
+            otpAlert.setTitle("OTP");
+            otpAlert.setHeaderText("Your OTP is: " + randomOTP);
+            otpAlert.setContentText("Please enter this OTP to confirm payment");
+            otpAlert.showAndWait();
+
+            TextInputDialog otpDialog = new TextInputDialog();
+            otpDialog.setTitle("Enter OTP");
+            otpDialog.setHeaderText("Enter the 5-digit OTP");
+            otpDialog.setContentText("OTP:");
+
+            Optional<String> otpResult = otpDialog.showAndWait();
+
+            if (otpResult.isPresent() && otpResult.get().trim().length() == 5) {
+                try {
+                    Integer.parseInt(otpResult.get().trim());
+
+                    Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                    successAlert.setTitle("Payment Successful");
+                    successAlert.setHeaderText(null);
+                    successAlert.setContentText("Your payment is successful!");
+                    successAlert.showAndWait();
+                    return true;
+                } catch (NumberFormatException e) {
+                    Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                    errorAlert.setTitle("Invalid OTP");
+                    errorAlert.setHeaderText(null);
+                    errorAlert.setContentText("Please enter valid 5-digit OTP");
+                    errorAlert.showAndWait();
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     private void showOrderConfirmationDialog(Order order) {

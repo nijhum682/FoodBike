@@ -94,6 +94,13 @@ public class BikerController {
         totalCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty("৳" + String.format("%.2f", data.getValue().getTotalPrice())));
         totalCol.setPrefWidth(100);
 
+        TableColumn<Order, String> paymentCol = new TableColumn<>("Payment");
+        paymentCol.setCellValueFactory(data -> {
+            String payment = data.getValue().getPaymentMethod();
+            return new javafx.beans.property.SimpleStringProperty(payment != null ? payment : "N/A");
+        });
+        paymentCol.setPrefWidth(120);
+
         TableColumn<Order, Void> actionCol = new TableColumn<>("Action");
         actionCol.setPrefWidth(180);
         actionCol.setCellFactory(col -> new TableCell<Order, Void>() {
@@ -118,7 +125,7 @@ public class BikerController {
             }
         });
 
-        readyOrdersTable.getColumns().addAll(orderIdCol, restaurantCol, locationCol, customerCol, itemsCol, totalCol, actionCol);
+        readyOrdersTable.getColumns().addAll(orderIdCol, restaurantCol, locationCol, customerCol, itemsCol, totalCol, paymentCol, actionCol);
     }
 
     private void setupDeliveredOrdersTable() {
@@ -148,6 +155,13 @@ public class BikerController {
         totalCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty("৳" + String.format("%.2f", data.getValue().getTotalPrice())));
         totalCol.setPrefWidth(100);
 
+        TableColumn<Order, String> paymentCol = new TableColumn<>("Payment");
+        paymentCol.setCellValueFactory(data -> {
+            String payment = data.getValue().getPaymentMethod();
+            return new javafx.beans.property.SimpleStringProperty(payment != null ? payment : "N/A");
+        });
+        paymentCol.setPrefWidth(120);
+
         TableColumn<Order, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getStatus().toString()));
         statusCol.setPrefWidth(150);
@@ -171,7 +185,7 @@ public class BikerController {
             }
         });
 
-        deliveredOrdersTable.getColumns().addAll(orderIdCol, restaurantCol, customerCol, itemsCol, totalCol, statusCol);
+        deliveredOrdersTable.getColumns().addAll(orderIdCol, restaurantCol, customerCol, itemsCol, totalCol, paymentCol, statusCol);
     }
 
     private void loadOrders() {
@@ -182,9 +196,7 @@ public class BikerController {
 
         for (Order order : allOrders) {
             if (order.getStatus() == Order.OrderStatus.READY) {
-                if (order.getBikerId() == null || order.getBikerId().equals(currentUser.getUsername())) {
-                    readyOrders.add(order);
-                }
+                readyOrders.add(order);
             } else if (order.getStatus() == Order.OrderStatus.DELIVERED) {
                 if (order.getBikerId() != null && order.getBikerId().equals(currentUser.getUsername())) {
                     deliveredOrders.add(order);
@@ -199,7 +211,7 @@ public class BikerController {
         filterOrders();
         deliveredOrdersTable.getItems().setAll(deliveredOrders);
 
-        deliveredOrdersTable.refresh();
+        readyOrdersTable.refresh();
         deliveredOrdersTable.refresh();
     }
 
@@ -329,24 +341,53 @@ public class BikerController {
     }
 
     private void markAsDelivered(Order order) {
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Mark as Delivered");
-        confirmAlert.setHeaderText("Confirm Delivery: " + order.getOrderId());
-        confirmAlert.setContentText("Are you sure you want to mark this order as delivered?");
+        String paymentMethod = order.getPaymentMethod();
+        boolean isCOD = paymentMethod != null && paymentMethod.equals("Cash on Delivery");
 
-        confirmAlert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                order.setStatus(Order.OrderStatus.DELIVERED);
-                databaseService.saveDataToFiles();
-                loadOrders();
-                
-                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
-                successAlert.setTitle("Success");
-                successAlert.setHeaderText(null);
-                successAlert.setContentText("Order marked as delivered successfully!");
-                successAlert.showAndWait();
-            }
-        });
+        if (isCOD) {
+            Alert codAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            codAlert.setTitle("Cash on Delivery Confirmation");
+            codAlert.setHeaderText("Confirm COD Payment: " + order.getOrderId());
+            codAlert.setContentText("Have you received the cash payment of ৳" + String.format("%.2f", order.getTotalPrice()) + " from the customer?");
+            
+            codAlert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+
+            codAlert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    order.setStatus(Order.OrderStatus.DELIVERED);
+                    databaseService.saveDataToFiles();
+                    loadOrders();
+
+                    Restaurant restaurant = databaseService.getRestaurant(order.getRestaurantId());
+                    String restaurantName = restaurant != null ? restaurant.getName() : "Unknown";
+
+                    Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                    successAlert.setTitle("Success");
+                    successAlert.setHeaderText(null);
+                    successAlert.setContentText("Order marked as delivered successfully!\n\nCash on Delivery of Order #" + order.getOrderId() + " is received.\nPlease deliver the payment to " + restaurantName + " restaurant.");
+                    successAlert.showAndWait();
+                }
+            });
+        } else {
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Mark as Delivered");
+            confirmAlert.setHeaderText("Confirm Delivery: " + order.getOrderId());
+            confirmAlert.setContentText("Are you sure you want to mark this order as delivered?");
+
+            confirmAlert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    order.setStatus(Order.OrderStatus.DELIVERED);
+                    databaseService.saveDataToFiles();
+                    loadOrders();
+
+                    Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                    successAlert.setTitle("Success");
+                    successAlert.setHeaderText(null);
+                    successAlert.setContentText("Order marked as delivered successfully!");
+                    successAlert.showAndWait();
+                }
+            });
+        }
     }
 
     private void confirmOrder(Order order, Restaurant restaurant) {
@@ -388,6 +429,16 @@ public class BikerController {
                 infoAlert.showAndWait();
             }
         });
+    }
+
+    @FXML
+    public void handleRefreshOrders() {
+        loadOrders();
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Refreshed");
+        alert.setHeaderText("Orders Updated");
+        alert.setContentText("Order list has been refreshed successfully!");
+        alert.showAndWait();
     }
 
     @FXML

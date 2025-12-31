@@ -20,6 +20,7 @@ public class Order implements Serializable {
     private OrderStatus status;
     private LocalDateTime createdAt;
     private String bikerId;
+    private String paymentMethod;
 
     public Order(String orderId, String userId, String restaurantId) {
         this.orderId = orderId;
@@ -102,5 +103,13 @@ public class Order implements Serializable {
             return this.createdAt.isBefore(fiveHoursAgo);
         }
         return false;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

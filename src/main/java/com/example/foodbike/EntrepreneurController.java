@@ -25,6 +25,7 @@ public class EntrepreneurController {
     @FXML private VBox restaurantInfoBox;
     @FXML private GridPane menuBox;
     @FXML private Label restaurantNameLabel;
+    @FXML private Button applyRestaurantButton;
 
     private User currentUser;
     private DatabaseService databaseService;
@@ -69,6 +70,10 @@ public class EntrepreneurController {
                     myRestaurant = restaurant;
                     displayRestaurantInfo(restaurant);
                     displayMenu(restaurant);
+                    if (applyRestaurantButton != null) {
+                        applyRestaurantButton.setVisible(false);
+                        applyRestaurantButton.setManaged(false);
+                    }
                     break;
                 }
             }
@@ -76,12 +81,31 @@ public class EntrepreneurController {
             // No approved restaurant
             restaurantInfoBox.setVisible(false);
             restaurantInfoBox.setManaged(false);
+            if (applyRestaurantButton != null) {
+                applyRestaurantButton.setVisible(true);
+                applyRestaurantButton.setManaged(true);
+            }
         }
     }
     
     private void displayRestaurantInfo(Restaurant restaurant) {
         restaurantInfoBox.setVisible(true);
         restaurantInfoBox.setManaged(true);
+        
+        HBox headerBox = new HBox();
+        headerBox.setStyle("-fx-alignment: center-left;");
+        
+        Label titleLabel = new Label("My Restaurant");
+        titleLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #27ae60;");
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
+        Button totalBalanceBtn = new Button("Total Balance");
+        totalBalanceBtn.setStyle("-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #f39c12; -fx-text-fill: white; -fx-border-radius: 4;");
+        totalBalanceBtn.setOnAction(e -> handleTotalBalance());
+        
+        headerBox.getChildren().addAll(titleLabel, spacer, totalBalanceBtn);
         
         VBox infoCard = new VBox(8);
         infoCard.setStyle("-fx-border-color: #27ae60; -fx-border-width: 2; -fx-border-radius: 6; -fx-padding: 15; -fx-background-color: #d4edda; -fx-alignment: center;");
@@ -99,7 +123,7 @@ public class EntrepreneurController {
         idLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #6c757d; -fx-font-style: italic;");
         
         infoCard.getChildren().addAll(nameLabel, locationLabel, ratingLabel, idLabel);
-        restaurantInfoBox.getChildren().add(infoCard);
+        restaurantInfoBox.getChildren().addAll(headerBox, infoCard);
         
         if (restaurantNameLabel != null) {
             restaurantNameLabel.setText("My Restaurant: " + restaurant.getName());
@@ -108,13 +132,6 @@ public class EntrepreneurController {
     
     private void displayMenu(Restaurant restaurant) {
         menuBox.getChildren().clear();
-        
-        if (restaurant.getMenu().isEmpty()) {
-            Label emptyLabel = new Label("No menu items available. Contact admin to add menu items.");
-            emptyLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #7f8c8d; -fx-padding: 10;");
-            menuBox.add(emptyLabel, 0, 0);
-            return;
-        }
         
         int row = 0, col = 0;
         for (MenuItem item : restaurant.getMenu()) {
@@ -134,11 +151,22 @@ public class EntrepreneurController {
             Label priceLabel = new Label("৳" + String.format("%.2f", item.getPrice()));
             priceLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #27ae60;");
             
-            menuCard.getChildren().addAll(nameLabel, descLabel, priceLabel);
+            HBox actionBox = new HBox(5);
+            Button editBtn = new Button("Edit");
+            editBtn.setStyle("-fx-padding: 4 8; -fx-font-size: 10; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 3;");
+            editBtn.setOnAction(e -> handleEditMenuItem(item));
+            
+            Button deleteBtn = new Button("Delete");
+            deleteBtn.setStyle("-fx-padding: 4 8; -fx-font-size: 10; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 3;");
+            deleteBtn.setOnAction(e -> handleDeleteMenuItem(item));
+            
+            actionBox.getChildren().addAll(editBtn, deleteBtn);
+            
+            menuCard.getChildren().addAll(nameLabel, descLabel, priceLabel, actionBox);
             menuBox.add(menuCard, col, row);
             
             col++;
-            if (col == 4) {
+            if (col == 7) {
                 col = 0;
                 row++;
             }
@@ -147,6 +175,15 @@ public class EntrepreneurController {
 
     @FXML
     public void handleApplyRestaurant() {
+        List<RestaurantApplication> existingApps = databaseService.getEntrepreneurApplications(currentUser.getUsername());
+        for (RestaurantApplication app : existingApps) {
+            if (app.getStatus() == RestaurantApplication.ApplicationStatus.PENDING ||
+                app.getStatus() == RestaurantApplication.ApplicationStatus.APPROVED) {
+                showAlert("Application Exists", "Already Applied", "You already have a restaurant application. You can only apply for one restaurant.");
+                return;
+            }
+        }
+
         Dialog<RestaurantApplication> dialog = new Dialog<>();
         dialog.setTitle("Apply for Restaurant");
         dialog.setHeaderText("Submit Restaurant Application");
@@ -316,6 +353,200 @@ public class EntrepreneurController {
     public void handleRefreshOrders() {
         loadOrders();
         showAlert("Refreshed", "Orders Updated", "Order list has been refreshed successfully!");
+    }
+
+    @FXML
+    public void handleTotalBalance() {
+        if (myRestaurant == null) {
+            showAlert("No Restaurant", "Error", "You don't have an approved restaurant yet.");
+            return;
+        }
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Total Balance");
+        dialog.setHeaderText("Payment Transactions");
+
+        VBox content = new VBox();
+        content.setSpacing(15);
+        content.setPadding(new Insets(20));
+
+        TableView<Order> balanceTable = new TableView<>();
+        balanceTable.setPrefHeight(400);
+        balanceTable.setPrefWidth(700);
+
+        TableColumn<Order, String> orderIdCol = new TableColumn<>("Order ID");
+        orderIdCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getOrderId()));
+        orderIdCol.setPrefWidth(150);
+
+        TableColumn<Order, String> customerCol = new TableColumn<>("Customer");
+        customerCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getUserId()));
+        customerCol.setPrefWidth(120);
+
+        TableColumn<Order, String> paymentCol = new TableColumn<>("Payment Method");
+        paymentCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getPaymentMethod()));
+        paymentCol.setPrefWidth(150);
+
+        TableColumn<Order, String> amountCol = new TableColumn<>("Amount");
+        amountCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty("৳" + String.format("%.2f", data.getValue().getTotalPrice())));
+        amountCol.setPrefWidth(120);
+
+        TableColumn<Order, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getStatus().toString()));
+        statusCol.setPrefWidth(120);
+
+        balanceTable.getColumns().addAll(orderIdCol, customerCol, paymentCol, amountCol, statusCol);
+
+        List<Order> payments = new ArrayList<>();
+        double totalBalance = 0.0;
+
+        List<Order> restaurantOrders = databaseService.getRestaurantOrders(myRestaurant.getId());
+        for (Order order : restaurantOrders) {
+            String payment = order.getPaymentMethod();
+            if (payment != null && (payment.equals("Bkash") || payment.equals("Nagad") || 
+                (payment.equals("Cash on Delivery") && order.getStatus() == Order.OrderStatus.DELIVERED))) {
+                payments.add(order);
+                totalBalance += order.getTotalPrice();
+            }
+        }
+
+        balanceTable.getItems().setAll(payments);
+
+        Label totalLabel = new Label("Total Balance: ৳" + String.format("%.2f", totalBalance));
+        totalLabel.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #27ae60; -fx-padding: 10;");
+
+        content.getChildren().addAll(balanceTable, totalLabel);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+        dialog.showAndWait();
+    }
+
+    @FXML
+    public void handleAddMenuItem() {
+        if (myRestaurant == null) {
+            showAlert("No Restaurant", "Error", "You don't have an approved restaurant yet.");
+            return;
+        }
+
+        Dialog<MenuItem> dialog = new Dialog<>();
+        dialog.setTitle("Add Menu Item");
+        dialog.setHeaderText("Add New Item to Menu");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20));
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Item Name");
+
+        TextField descField = new TextField();
+        descField.setPromptText("Description");
+
+        Spinner<Double> priceSpinner = new Spinner<>(0.0, 10000.0, 100.0, 10.0);
+        priceSpinner.setEditable(true);
+
+        grid.add(new Label("Item Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Description:"), 0, 1);
+        grid.add(descField, 1, 1);
+        grid.add(new Label("Price (৳):"), 0, 2);
+        grid.add(priceSpinner, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String name = nameField.getText().trim();
+                String desc = descField.getText().trim();
+                Double price = priceSpinner.getValue();
+
+                if (name.isEmpty() || desc.isEmpty() || price <= 0) {
+                    showAlert("Validation Error", "Invalid Input", "Please fill all fields correctly.");
+                    return null;
+                }
+
+                String itemId = "item_" + System.currentTimeMillis();
+                return new MenuItem(itemId, name, desc, price);
+            }
+            return null;
+        });
+
+        Optional<MenuItem> result = dialog.showAndWait();
+        result.ifPresent(menuItem -> {
+            myRestaurant.addMenuItem(menuItem);
+            databaseService.saveDataToFiles();
+            displayMenu(myRestaurant);
+            showAlert("Success", "Item Added", "Menu item added successfully!");
+        });
+    }
+
+    private void handleEditMenuItem(MenuItem item) {
+        Dialog<MenuItem> dialog = new Dialog<>();
+        dialog.setTitle("Edit Menu Item");
+        dialog.setHeaderText("Update Menu Item");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20));
+
+        TextField nameField = new TextField(item.getName());
+        TextField descField = new TextField(item.getDescription());
+        Spinner<Double> priceSpinner = new Spinner<>(0.0, 10000.0, item.getPrice(), 10.0);
+        priceSpinner.setEditable(true);
+
+        grid.add(new Label("Item Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Description:"), 0, 1);
+        grid.add(descField, 1, 1);
+        grid.add(new Label("Price (৳):"), 0, 2);
+        grid.add(priceSpinner, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String name = nameField.getText().trim();
+                String desc = descField.getText().trim();
+                Double price = priceSpinner.getValue();
+
+                if (name.isEmpty() || desc.isEmpty() || price <= 0) {
+                    showAlert("Validation Error", "Invalid Input", "Please fill all fields correctly.");
+                    return null;
+                }
+
+                return new MenuItem(item.getId(), name, desc, price);
+            }
+            return null;
+        });
+
+        Optional<MenuItem> result = dialog.showAndWait();
+        result.ifPresent(updatedItem -> {
+            myRestaurant.getMenu().remove(item);
+            myRestaurant.addMenuItem(updatedItem);
+            databaseService.saveDataToFiles();
+            displayMenu(myRestaurant);
+            showAlert("Success", "Item Updated", "Menu item updated successfully!");
+        });
+    }
+
+    private void handleDeleteMenuItem(MenuItem item) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Delete Menu Item");
+        confirmAlert.setHeaderText("Delete: " + item.getName());
+        confirmAlert.setContentText("Are you sure you want to delete this menu item?");
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            myRestaurant.getMenu().remove(item);
+            databaseService.saveDataToFiles();
+            displayMenu(myRestaurant);
+            showAlert("Success", "Item Deleted", "Menu item deleted successfully!");
+        }
     }
 
     private void showAlert(String title, String header, String content) {
