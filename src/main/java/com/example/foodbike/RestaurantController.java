@@ -10,10 +10,12 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class RestaurantController {
     @FXML private TextField searchField;
     @FXML private ComboBox<String> divisionCombo;
+    @FXML private ComboBox<String> districtCombo;
     @FXML private GridPane restaurantsGrid;
     @FXML private Label userLabel;
     private DatabaseService databaseService;
@@ -24,7 +26,15 @@ public class RestaurantController {
     public void initialize() {
         databaseService = DatabaseService.getInstance();
         loadDivisions();
+        loadDistricts();
         loadAllRestaurants();
+        
+        if (divisionCombo != null) {
+            divisionCombo.setOnAction(e -> {
+                String selectedDivision = divisionCombo.getValue();
+                updateDistrictCombo(selectedDivision);
+            });
+        }
     }
 
     public void setCurrentUser(User user) {
@@ -37,6 +47,30 @@ public class RestaurantController {
         divisionCombo.getItems().add("All");
         divisionCombo.getItems().addAll(divisions);
         divisionCombo.setValue("All");
+    }
+
+    private void loadDistricts() {
+        List<String> districts = databaseService.getAllDistricts();
+        districtCombo.getItems().add("All");
+        districtCombo.getItems().addAll(districts);
+        districtCombo.setValue("All");
+    }
+
+    private void updateDistrictCombo(String division) {
+        districtCombo.getItems().clear();
+        districtCombo.getItems().add("All");
+        
+        if (division != null && !division.equals("All")) {
+            Map<String, List<String>> divisionDistrictsMap = databaseService.getDivisionDistrictsMap();
+            List<String> districts = divisionDistrictsMap.get(division);
+            if (districts != null) {
+                districtCombo.getItems().addAll(districts);
+            }
+        } else {
+            List<String> allDistricts = databaseService.getAllDistricts();
+            districtCombo.getItems().addAll(allDistricts);
+        }
+        districtCombo.setValue("All");
     }
 
     private void loadAllRestaurants() {
@@ -74,13 +108,20 @@ public class RestaurantController {
         nameLabel.setStyle("-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
         nameLabel.setWrapText(true);
 
-        Label divisionLabel = new Label("📍 " + restaurant.getDivision());
-        divisionLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #333333;");
+        // If district and division are the same, show only division name
+        String locationText;
+        if (restaurant.getDistrict().equals(restaurant.getDivision())) {
+            locationText = restaurant.getDivision();
+        } else {
+            locationText = restaurant.getDistrict() + ", " + restaurant.getDivision();
+        }
+        Label locationLabel = new Label(locationText);
+        locationLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #333333;");
 
         Label ratingLabel = new Label("⭐ " + String.format("%.1f", restaurant.getRating()));
         ratingLabel.setStyle("-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #FF8C00;");
 
-        Label addressLabel = new Label(restaurant.getAddress());
+        Label addressLabel = new Label("📍 " + restaurant.getAddress());
         addressLabel.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #555555; -fx-wrap-text: true;");
         addressLabel.setWrapText(true);
 
@@ -89,7 +130,7 @@ public class RestaurantController {
         viewMenuBtn.setMaxWidth(Double.MAX_VALUE);
         viewMenuBtn.setOnAction(e -> openMenuView(restaurant));
 
-        card.getChildren().addAll(nameLabel, divisionLabel, ratingLabel, addressLabel, viewMenuBtn);
+        card.getChildren().addAll(nameLabel, locationLabel, ratingLabel, addressLabel, viewMenuBtn);
         card.setPadding(new Insets(15));
 
         return card;
@@ -120,6 +161,8 @@ public class RestaurantController {
         if (query.isEmpty()) {
             loadAllRestaurants();
         } else {
+            divisionCombo.setValue("All");
+            districtCombo.setValue("All");
             List<Restaurant> results = databaseService.searchRestaurants(query);
             displayRestaurants(results);
         }
@@ -127,10 +170,16 @@ public class RestaurantController {
 
     @FXML
     public void handleFilter() {
+        searchField.clear();
         String division = divisionCombo.getValue();
-        if (division == null || division.equals("All")) {
+        String district = districtCombo.getValue();
+        
+        if ((division == null || division.equals("All")) && (district == null || district.equals("All"))) {
             loadAllRestaurants();
-        } else {
+        } else if (district != null && !district.equals("All")) {
+            List<Restaurant> results = databaseService.getRestaurantsByDistrict(district);
+            displayRestaurants(results);
+        } else if (division != null && !division.equals("All")) {
             List<Restaurant> results = databaseService.getRestaurantsByDivision(division);
             displayRestaurants(results);
         }

@@ -15,6 +15,7 @@ public class Order implements Serializable {
     private String orderId;
     private String userId;
     private String restaurantId;
+    private String district;
     private List<MenuItem> items;
     private double totalPrice;
     private OrderStatus status;
@@ -54,6 +55,14 @@ public class Order implements Serializable {
 
     public void setRestaurantId(String restaurantId) {
         this.restaurantId = restaurantId;
+    }
+
+    public String getDistrict() {
+        return district;
+    }
+
+    public void setDistrict(String district) {
+        this.district = district;
     }
 
     public List<MenuItem> getItems() {

@@ -16,6 +16,7 @@
             <right>
                 <HBox spacing="15" style="-fx-padding: 10;">
                     <Label fx:id="userLabel" style="-fx-font-size: 14; -fx-text-fill: #ffffff;" text="Welcome, Biker" />
+                    <Button onAction="#handleBalance" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="💰 Balance" />
                     <Button onAction="#handleLogout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" text="Logout" />
                 </HBox>
             </right>
@@ -35,7 +36,11 @@
                         
                         <HBox spacing="10" style="-fx-padding: 10 0;">
                             <Label style="-fx-font-size: 14; -fx-text-fill: #34495e; -fx-padding: 5;" text="Filter by Division:" />
-                            <javafx.scene.control.ComboBox fx:id="divisionFilter" style="-fx-pref-width: 200;" />
+                            <javafx.scene.control.ComboBox fx:id="divisionFilter" style="-fx-pref-width: 150;" />
+                            <Label style="-fx-font-size: 14; -fx-text-fill: #34495e; -fx-padding: 5;" text="District:" />
+                            <javafx.scene.control.ComboBox fx:id="districtFilter" style="-fx-pref-width: 150;" />
+                            <Button onAction="#handleFilter" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="Filter" />
+                            <Button onAction="#handleClearFilter" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white; -fx-border-radius: 4;" text="Clear" />
                         </HBox>
                         
                         <ScrollPane fitToWidth="true" style="-fx-border-color: transparent;">

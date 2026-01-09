@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class EntrepreneurController {
@@ -23,6 +24,7 @@ public class EntrepreneurController {
     @FXML private TableView<Order> confirmedOrdersTable;
     @FXML private Label userLabel;
     @FXML private VBox restaurantInfoBox;
+    @FXML private VBox applicationMessageBox;
     @FXML private GridPane menuBox;
     @FXML private Label restaurantNameLabel;
     @FXML private Button applyRestaurantButton;
@@ -40,8 +42,103 @@ public class EntrepreneurController {
     public void setCurrentUser(User user) {
         this.currentUser = user;
         userLabel.setText("Welcome, " + user.getUsername());
+        displayApplicationMessages();
         loadMyRestaurant();
         loadOrders();
+    }
+    
+    private void displayApplicationMessages() {
+        if (applicationMessageBox == null) {
+            return;
+        }
+        
+        applicationMessageBox.getChildren().clear();
+        applicationMessageBox.setVisible(false);
+        applicationMessageBox.setManaged(false);
+        
+        List<RestaurantApplication> applications = databaseService.getEntrepreneurApplications(currentUser.getUsername());
+        
+        boolean hasApprovedApp = false;
+        for (RestaurantApplication app : applications) {
+            if (app.getStatus() == RestaurantApplication.ApplicationStatus.APPROVED) {
+                hasApprovedApp = true;
+                break;
+            }
+        }
+        
+        for (RestaurantApplication app : applications) {
+            if (app.getStatus() == RestaurantApplication.ApplicationStatus.APPROVED && !app.isMessageViewed()) {
+                VBox messageBox = new VBox(5);
+                messageBox.setStyle("-fx-background-color: #d4edda; -fx-border-color: #c3e6cb; -fx-border-radius: 5; -fx-padding: 15;");
+                
+                Label titleLabel = new Label("✓ Application Approved");
+                titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #155724;");
+                
+                Label restaurantLabel = new Label("Restaurant: " + app.getRestaurantName());
+                restaurantLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #155724;");
+                
+                String adminMessage = app.getAdminMessage();
+                if (adminMessage != null && !adminMessage.isEmpty()) {
+                    Label messageLabel = new Label(adminMessage);
+                    messageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #155724;");
+                    messageLabel.setWrapText(true);
+                    messageBox.getChildren().addAll(titleLabel, restaurantLabel, messageLabel);
+                } else {
+                    messageBox.getChildren().addAll(titleLabel, restaurantLabel);
+                }
+                
+                applicationMessageBox.getChildren().add(messageBox);
+                applicationMessageBox.setVisible(true);
+                applicationMessageBox.setManaged(true);
+                
+                app.setMessageViewed(true);
+                databaseService.saveDataToFiles();
+                break;
+            } else if (app.getStatus() == RestaurantApplication.ApplicationStatus.REJECTED && !hasApprovedApp) {
+                VBox messageBox = new VBox(5);
+                messageBox.setStyle("-fx-background-color: #f8d7da; -fx-border-color: #f5c6cb; -fx-border-radius: 5; -fx-padding: 15;");
+                
+                Label titleLabel = new Label("✗ Application Rejected");
+                titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #721c24;");
+                
+                Label restaurantLabel = new Label("Restaurant: " + app.getRestaurantName());
+                restaurantLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #721c24;");
+                
+                String adminMessage = app.getAdminMessage();
+                if (adminMessage != null && !adminMessage.isEmpty()) {
+                    Label messageLabel = new Label(adminMessage);
+                    messageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #721c24;");
+                    messageLabel.setWrapText(true);
+                    messageBox.getChildren().addAll(titleLabel, restaurantLabel, messageLabel);
+                } else {
+                    messageBox.getChildren().addAll(titleLabel, restaurantLabel);
+                }
+                
+                applicationMessageBox.getChildren().add(messageBox);
+                applicationMessageBox.setVisible(true);
+                applicationMessageBox.setManaged(true);
+                break;
+            } else if (app.getStatus() == RestaurantApplication.ApplicationStatus.PENDING) {
+                VBox messageBox = new VBox(5);
+                messageBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffeaa7; -fx-border-radius: 5; -fx-padding: 15;");
+                
+                Label titleLabel = new Label("⏳ Application Pending");
+                titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #856404;");
+                
+                Label restaurantLabel = new Label("Restaurant: " + app.getRestaurantName());
+                restaurantLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #856404;");
+                
+                Label messageLabel = new Label("Your application is under review. Please wait for admin approval.");
+                messageLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #856404;");
+                messageLabel.setWrapText(true);
+                
+                messageBox.getChildren().addAll(titleLabel, restaurantLabel, messageLabel);
+                applicationMessageBox.getChildren().add(messageBox);
+                applicationMessageBox.setVisible(true);
+                applicationMessageBox.setManaged(true);
+                break;
+            }
+        }
     }
     
     private void loadMyRestaurant() {
@@ -113,7 +210,7 @@ public class EntrepreneurController {
         Label nameLabel = new Label("✓ " + restaurant.getName());
         nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 18; -fx-text-fill: #155724;");
         
-        Label locationLabel = new Label("📍 " + restaurant.getDivision() + " - " + restaurant.getAddress());
+        Label locationLabel = new Label("📍 " + restaurant.getDistrict() + ", " + restaurant.getDivision() + " - " + restaurant.getAddress());
         locationLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #155724;");
         
         Label ratingLabel = new Label("⭐ Rating: " + restaurant.getRating() + "/5.0");
@@ -201,6 +298,21 @@ public class EntrepreneurController {
         divisionCombo.getItems().addAll("Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh");
         divisionCombo.setPrefWidth(250);
         
+        ComboBox<String> districtCombo = new ComboBox<>();
+        districtCombo.setPrefWidth(250);
+        
+        divisionCombo.setOnAction(e -> {
+            String selectedDivision = divisionCombo.getValue();
+            districtCombo.getItems().clear();
+            if (selectedDivision != null) {
+                Map<String, List<String>> divisionDistrictsMap = databaseService.getDivisionDistrictsMap();
+                List<String> districts = divisionDistrictsMap.get(selectedDivision);
+                if (districts != null) {
+                    districtCombo.getItems().addAll(districts);
+                }
+            }
+        });
+        
         TextField addressField = new TextField();
         addressField.setPromptText("Address");
         addressField.setPrefWidth(250);
@@ -237,11 +349,13 @@ public class EntrepreneurController {
         grid.add(nameField, 1, 0);
         grid.add(new Label("Division:"), 0, 1);
         grid.add(divisionCombo, 1, 1);
-        grid.add(new Label("Address:"), 0, 2);
-        grid.add(addressField, 1, 2);
-        grid.add(new Label("Rating (0-5):"), 0, 3);
-        grid.add(ratingSpinner, 1, 3);
-        grid.add(menuItemsBox, 0, 4, 2, 1);
+        grid.add(new Label("District:"), 0, 2);
+        grid.add(districtCombo, 1, 2);
+        grid.add(new Label("Address:"), 0, 3);
+        grid.add(addressField, 1, 3);
+        grid.add(new Label("Rating (0-5):"), 0, 4);
+        grid.add(ratingSpinner, 1, 4);
+        grid.add(menuItemsBox, 0, 5, 2, 1);
         
         ScrollPane mainScrollPane = new ScrollPane(grid);
         mainScrollPane.setFitToWidth(true);
@@ -256,17 +370,18 @@ public class EntrepreneurController {
             if (buttonType == ButtonType.OK) {
                 String name = nameField.getText().trim();
                 String division = divisionCombo.getValue();
+                String district = districtCombo.getValue();
                 String address = addressField.getText().trim();
                 Double rating = ratingSpinner.getValue();
                 
-                if (name.isEmpty() || division == null || address.isEmpty() || menuItems.isEmpty()) {
-                    showAlert("Validation Error", "Missing Data", "All fields including at least one menu item are required.");
+                if (name.isEmpty() || division == null || district == null || address.isEmpty() || menuItems.isEmpty()) {
+                    showAlert("Validation Error", "Missing Data", "All fields including Division, District, and at least one menu item are required.");
                     return null;
                 }
                 
                 String appId = "APP_" + System.currentTimeMillis();
                 RestaurantApplication application = new RestaurantApplication(
-                    appId, currentUser.getUsername(), name, division, address, rating);
+                    appId, currentUser.getUsername(), name, division, district, address, rating);
                 
                 for (MenuItem item : menuItems) {
                     application.addMenuItem(item);
@@ -318,6 +433,10 @@ public class EntrepreneurController {
             MenuItem item = new MenuItem(itemId, name, desc, price);
             menuItems.add(item);
             
+            Label savedItemLabel = new Label("✓ " + name + " - ৳" + price + " (" + desc + ")");
+            savedItemLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-padding: 5; -fx-background-color: #e8f5e9; -fx-border-radius: 3;");
+            container.getChildren().add(0, savedItemLabel);
+            
             itemNameField.clear();
             itemDescField.clear();
             priceSpinner.getValueFactory().setValue(100.0);
@@ -362,7 +481,7 @@ public class EntrepreneurController {
             return;
         }
 
-        Dialog<Void> dialog = new Dialog<>();
+        Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Total Balance");
         dialog.setHeaderText("Payment Transactions");
 
@@ -417,9 +536,117 @@ public class EntrepreneurController {
         content.getChildren().addAll(balanceTable, totalLabel);
 
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-
-        dialog.showAndWait();
+        
+        ButtonType withdrawBtn = new ButtonType("Withdraw", ButtonBar.ButtonData.OK_DONE);
+        ButtonType closeBtn = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(withdrawBtn, closeBtn);
+        
+        final double finalTotalBalance = totalBalance;
+        dialog.showAndWait().ifPresent(response -> {
+            if (response == withdrawBtn) {
+                showWithdrawDialog(finalTotalBalance);
+            }
+        });
+    }
+    
+    private void showWithdrawDialog(double balance) {
+        Dialog<ButtonType> withdrawDialog = new Dialog<>();
+        withdrawDialog.setTitle("Withdraw Balance");
+        withdrawDialog.setHeaderText("💳 Withdraw ৳" + String.format("%.2f", balance));
+        
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        
+        Label methodLabel = new Label("Select Withdrawal Method:");
+        methodLabel.setStyle("-fx-font-weight: bold;");
+        
+        ComboBox<String> methodCombo = new ComboBox<>();
+        methodCombo.getItems().addAll("Bank Account", "Bkash", "Nagad");
+        methodCombo.setValue("Bkash");
+        methodCombo.setStyle("-fx-pref-width: 200;");
+        
+        Label accountLabel = new Label("Account Number:");
+        accountLabel.setStyle("-fx-font-weight: bold;");
+        
+        TextField accountField = new TextField();
+        accountField.setPromptText("Enter account number");
+        accountField.setStyle("-fx-pref-width: 200;");
+        
+        content.getChildren().addAll(methodLabel, methodCombo, accountLabel, accountField);
+        
+        withdrawDialog.getDialogPane().setContent(content);
+        withdrawDialog.getDialogPane().setPrefWidth(350);
+        
+        ButtonType getOtpBtn = new ButtonType("Get OTP", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        withdrawDialog.getDialogPane().getButtonTypes().addAll(getOtpBtn, cancelBtn);
+        
+        withdrawDialog.showAndWait().ifPresent(response -> {
+            if (response == getOtpBtn) {
+                String method = methodCombo.getValue();
+                String account = accountField.getText().trim();
+                
+                if (account.isEmpty()) {
+                    showAlert("Error", "Missing Information", "Please enter account number.");
+                    return;
+                }
+                
+                String generatedOtp = String.valueOf((int)(Math.random() * 900000) + 100000);
+                showOtpVerificationDialog(balance, method, account, generatedOtp);
+            }
+        });
+    }
+    
+    private void showOtpVerificationDialog(double balance, String method, String account, String generatedOtp) {
+        showAlert("OTP Sent", "📩 OTP Sent to " + account, "Your OTP is: " + generatedOtp + "\n\nPlease use this OTP to complete the withdrawal.");
+        
+        Dialog<ButtonType> otpDialog = new Dialog<>();
+        otpDialog.setTitle("Verify OTP");
+        otpDialog.setHeaderText("🔐 Enter OTP to Withdraw ৳" + String.format("%.2f", balance));
+        
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        
+        Label infoLabel = new Label("Method: " + method + "\nAccount: " + account);
+        infoLabel.setStyle("-fx-font-size: 12;");
+        
+        Label otpLabel = new Label("Enter OTP:");
+        otpLabel.setStyle("-fx-font-weight: bold;");
+        
+        TextField otpField = new TextField();
+        otpField.setPromptText("Enter 6-digit OTP");
+        otpField.setStyle("-fx-pref-width: 200;");
+        
+        content.getChildren().addAll(infoLabel, otpLabel, otpField);
+        
+        otpDialog.getDialogPane().setContent(content);
+        otpDialog.getDialogPane().setPrefWidth(350);
+        
+        ButtonType confirmBtn = new ButtonType("Confirm Withdraw", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        otpDialog.getDialogPane().getButtonTypes().addAll(confirmBtn, cancelBtn);
+        
+        otpDialog.showAndWait().ifPresent(response -> {
+            if (response == confirmBtn) {
+                String enteredOtp = otpField.getText().trim();
+                
+                if (enteredOtp.isEmpty()) {
+                    showAlert("Error", "Missing OTP", "Please enter the OTP.");
+                    return;
+                }
+                
+                if (!enteredOtp.equals(generatedOtp)) {
+                    showAlert("Error", "Invalid OTP", "The OTP you entered is incorrect. Please try again.");
+                    return;
+                }
+                
+                showAlert("Withdrawal Successful", "✅ Withdrawal Complete", 
+                        "Successfully withdrawn ৳" + String.format("%.2f", balance) + "\n\n" +
+                        "Method: " + method + "\n" +
+                        "Account: " + account + "\n\n" +
+                        "The amount will be transferred within 24 hours.");
+            }
+        });
     }
 
     @FXML

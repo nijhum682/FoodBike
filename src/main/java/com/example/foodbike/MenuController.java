@@ -159,6 +159,7 @@ public class MenuController {
 
         String orderId = "ORD_" + System.currentTimeMillis();
         Order order = new Order(orderId, currentUser.getUsername(), restaurant.getId());
+        order.setDistrict(restaurant.getDistrict());
 
         for (MenuItem item : selectedItems.keySet()) {
             for (int i = 0; i < selectedItems.get(item); i++) {

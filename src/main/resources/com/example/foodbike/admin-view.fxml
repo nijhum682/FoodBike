@@ -17,6 +17,7 @@
                   <Insets left="100.0" />
                </padding></Label>
                 <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#handleBalance" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="💰 Balance" />
                 <Button onAction="#handleLogout" style="-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-border-radius: 4;" text="Logout" />
             </HBox>
         </VBox>
@@ -28,7 +29,7 @@
                 <HBox alignment="CENTER_LEFT" spacing="10">
                     <Label fx:id="pendingCountLabel" style="-fx-font-size: 16; -fx-font-weight: bold;" text="Pending Applications" />
                 </HBox>
-                <ScrollPane fitToWidth="true" prefHeight="105.0" prefWidth="1120.0" style="-fx-background-color: #E3F2FD; -fx-border-color: transparent; -fx-border-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);">
+                <ScrollPane fitToWidth="true" prefHeight="168.0" prefWidth="1120.0" style="-fx-background-color: #E3F2FD; -fx-border-color: transparent; -fx-border-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);">
                     <VBox fx:id="applicationsBox" spacing="10" style="-fx-padding: 10;" />
                 </ScrollPane>
             </VBox>
@@ -55,6 +56,14 @@
                         <Tooltip text="Filter by restaurant division" />
                     </tooltip>
                 </ComboBox>
+                
+                <Label prefHeight="26.0" prefWidth="55.0" style="-fx-font-size: 12; -fx-text-fill: #555;" text="District:" />
+                <ComboBox fx:id="districtCombo" style="-fx-padding: 8; -fx-font-size: 12; -fx-min-width: 150;">
+                    <tooltip>
+                        <Tooltip text="Filter by restaurant district" />
+                    </tooltip>
+                </ComboBox>
+                
                 <Button onAction="#handleFilter" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 4;" text="Filter" />
                 <Button onAction="#handleClear" style="-fx-padding: 10 20; -fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white; -fx-border-radius: 4;" text="Clear" />
             </HBox>

@@ -26,6 +26,7 @@ public class AdminController {
     @FXML private TableColumn<Restaurant, Double> ratingColumn;
     @FXML private TextField searchField;
     @FXML private ComboBox<String> divisionCombo;
+    @FXML private ComboBox<String> districtCombo;
     @FXML private VBox applicationsBox;
     @FXML private Label pendingCountLabel;
 
@@ -49,6 +50,7 @@ public class AdminController {
     public void initialize() {
         databaseService = DatabaseService.getInstance();
         setupDivisionCombo();
+        setupDistrictCombo();
         setupTableColumns();
         loadRestaurants();
         loadPendingApplications();
@@ -71,7 +73,7 @@ public class AdminController {
             Label nameLabel = new Label("Restaurant: " + app.getRestaurantName());
             nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
             
-            Label locationLabel = new Label("Location: " + app.getDivision() + " - " + app.getAddress());
+            Label locationLabel = new Label("Location: " + app.getDistrict() + ", " + app.getDivision() + " - " + app.getAddress());
             locationLabel.setStyle("-fx-font-size: 11;");
             
             Label ratingLabel = new Label("Rating: " + app.getRating() + " ★");
@@ -115,6 +117,7 @@ public class AdminController {
         nameLabel.setStyle("-fx-font-weight: bold;");
         
         Label divisionLabel = new Label("Division: " + app.getDivision());
+        Label districtLabel = new Label("District: " + app.getDistrict());
         Label addressLabel = new Label("Address: " + app.getAddress());
         Label ratingLabel = new Label("Rating: " + app.getRating() + " ★");
         Label entrepreneurLabel = new Label("Entrepreneur: " + app.getEntrepreneurUsername());
@@ -129,7 +132,7 @@ public class AdminController {
             menuBox.getChildren().add(itemLabel);
         }
         
-        vbox.getChildren().addAll(nameLabel, divisionLabel, addressLabel, ratingLabel, entrepreneurLabel, menuHeader, menuBox);
+        vbox.getChildren().addAll(nameLabel, divisionLabel, districtLabel, addressLabel, ratingLabel, entrepreneurLabel, menuHeader, menuBox);
         
         ScrollPane scrollPane = new ScrollPane(vbox);
         scrollPane.setPrefHeight(400);
@@ -158,7 +161,7 @@ public class AdminController {
             String prefix = DIVISION_PREFIXES.get(app.getDivision());
             String restaurantId = String.format("%s%03d", prefix, count + 1);
             
-            Restaurant newRestaurant = new Restaurant(restaurantId, app.getRestaurantName(), app.getDivision(), app.getAddress());
+            Restaurant newRestaurant = new Restaurant(restaurantId, app.getRestaurantName(), app.getDivision(), app.getDistrict(), app.getAddress());
             newRestaurant.setRating(app.getRating());
             
             for (MenuItem item : app.getMenuItems()) {
@@ -215,8 +218,33 @@ public class AdminController {
         ));
         divisionCombo.setValue("All");
         
-        // Add listener to automatically filter when division is selected
-        divisionCombo.setOnAction(e -> handleFilter());
+        // Update district combo when division changes
+        divisionCombo.setOnAction(e -> updateDistrictCombo());
+    }
+    
+    private void setupDistrictCombo() {
+        districtCombo.getItems().add("All");
+        districtCombo.setValue("All");
+    }
+    
+    private void updateDistrictCombo() {
+        String selectedDivision = divisionCombo.getValue();
+        districtCombo.getItems().clear();
+        districtCombo.getItems().add("All");
+        
+        if (selectedDivision != null && !selectedDivision.equals("All")) {
+            Map<String, List<String>> divisionDistrictsMap = DatabaseService.getInstance().getDivisionDistrictsMap();
+            List<String> districts = divisionDistrictsMap.get(selectedDivision);
+            if (districts != null) {
+                districtCombo.getItems().addAll(districts);
+            }
+        } else {
+            // Show all districts
+            List<String> allDistricts = DatabaseService.getInstance().getAllDistricts();
+            districtCombo.getItems().addAll(allDistricts);
+        }
+        
+        districtCombo.setValue("All");
     }
 
     @SuppressWarnings("unchecked")
@@ -343,30 +371,44 @@ public class AdminController {
         ObservableList<Restaurant> observableList = FXCollections.observableArrayList(filteredList);
         restaurantsTable.setItems(observableList);
         addActionColumns();
+        
+        // Clear filters when search is performed
+        divisionCombo.setValue("All");
+        districtCombo.setValue("All");
     }
 
     @FXML
     public void handleFilter() {
         String selectedDivision = divisionCombo.getValue();
+        String selectedDistrict = districtCombo.getValue();
         
-        if (selectedDivision == null || selectedDivision.equals("All")) {
+        if ((selectedDivision == null || selectedDivision.equals("All")) && 
+            (selectedDistrict == null || selectedDistrict.equals("All"))) {
             loadRestaurants();
             return;
         }
         
         List<Restaurant> filteredList = allRestaurants.stream()
-            .filter(r -> r.getDivision().equals(selectedDivision))
+            .filter(r -> {
+                boolean matchesDivision = selectedDivision == null || selectedDivision.equals("All") || r.getDivision().equals(selectedDivision);
+                boolean matchesDistrict = selectedDistrict == null || selectedDistrict.equals("All") || r.getDistrict().equals(selectedDistrict);
+                return matchesDivision && matchesDistrict;
+            })
             .collect(Collectors.toList());
         
         ObservableList<Restaurant> observableList = FXCollections.observableArrayList(filteredList);
         restaurantsTable.setItems(observableList);
         addActionColumns();
+        
+        // Clear search field when filter is applied
+        searchField.clear();
     }
 
     @FXML
     public void handleClear() {
         searchField.clear();
         divisionCombo.setValue("All");
+        districtCombo.setValue("All");
         loadRestaurants();
     }
 
@@ -391,6 +433,21 @@ public class AdminController {
         ));
         divisionComboAdd.setPrefWidth(250);
         
+        ComboBox<String> districtComboAdd = new ComboBox<>();
+        districtComboAdd.setPrefWidth(250);
+        
+        divisionComboAdd.setOnAction(e -> {
+            String selectedDivision = divisionComboAdd.getValue();
+            districtComboAdd.getItems().clear();
+            if (selectedDivision != null) {
+                Map<String, List<String>> divisionDistrictsMap = databaseService.getDivisionDistrictsMap();
+                List<String> districts = divisionDistrictsMap.get(selectedDivision);
+                if (districts != null) {
+                    districtComboAdd.setItems(FXCollections.observableArrayList(districts));
+                }
+            }
+        });
+        
         TextField addressField = new TextField();
         addressField.setPromptText("Restaurant Address");
         addressField.setPrefWidth(250);
@@ -403,10 +460,12 @@ public class AdminController {
         grid.add(nameField, 1, 0);
         grid.add(new Label("Division:"), 0, 1);
         grid.add(divisionComboAdd, 1, 1);
-        grid.add(new Label("Address:"), 0, 2);
-        grid.add(addressField, 1, 2);
-        grid.add(new Label("Rating (0-5):"), 0, 3);
-        grid.add(ratingSpinner, 1, 3);
+        grid.add(new Label("District:"), 0, 2);
+        grid.add(districtComboAdd, 1, 2);
+        grid.add(new Label("Address:"), 0, 3);
+        grid.add(addressField, 1, 3);
+        grid.add(new Label("Rating (0-5):"), 0, 4);
+        grid.add(ratingSpinner, 1, 4);
         
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -415,6 +474,7 @@ public class AdminController {
             if (buttonType == ButtonType.OK) {
                 String name = nameField.getText().trim();
                 String division = divisionComboAdd.getValue();
+                String district = districtComboAdd.getValue();
                 String address = addressField.getText().trim();
                 Double rating = ratingSpinner.getValue();
                 
@@ -424,6 +484,10 @@ public class AdminController {
                 }
                 if (division == null || division.isEmpty()) {
                     showAlert("Validation Error", "Missing Data", "Please select a division.");
+                    return null;
+                }
+                if (district == null || district.isEmpty()) {
+                    showAlert("Validation Error", "Missing Data", "Please select a district.");
                     return null;
                 }
                 if (address.isEmpty()) {
@@ -447,6 +511,7 @@ public class AdminController {
                     restaurantId,
                     name,
                     division,
+                    district,
                     address
                 );
                 newRestaurant.setRating(rating);
@@ -463,7 +528,7 @@ public class AdminController {
                         currentUser.getUsername(),
                         AdminAction.ActionType.ADDED_RESTAURANT,
                         restaurant.getName(),
-                        "Added restaurant: " + restaurant.getName() + " in " + restaurant.getDivision()
+                        "Added restaurant: " + restaurant.getName() + " in " + restaurant.getDistrict() + ", " + restaurant.getDivision()
                     );
                     databaseService.logAdminAction(action);
                 }
@@ -762,6 +827,141 @@ public class AdminController {
             e.printStackTrace();
             showAlert("Error", "Failed to Load History", "Could not open admin history window.");
         }
+    }
+
+    @FXML
+    public void handleBalance() {
+        List<AdminAction> allActions = databaseService.getAllAdminActions();
+        int totalActions = allActions.size();
+        int totalIncome = totalActions * 10;
+        
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Admin Balance");
+        dialog.setHeaderText("💰 Admin Income Summary");
+        
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        
+        Label summaryLabel = new Label("Total Actions: " + totalActions + "\n" +
+                           "Income per Action: ৳10\n" +
+                           "─────────────────\n" +
+                           "Total Balance: ৳" + totalIncome);
+        summaryLabel.setStyle("-fx-font-size: 14;");
+        
+        content.getChildren().add(summaryLabel);
+        
+        dialog.getDialogPane().setContent(content);
+        
+        ButtonType withdrawBtn = new ButtonType("Withdraw", ButtonBar.ButtonData.OK_DONE);
+        ButtonType closeBtn = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(withdrawBtn, closeBtn);
+        
+        final int finalTotalIncome = totalIncome;
+        dialog.showAndWait().ifPresent(response -> {
+            if (response == withdrawBtn) {
+                showWithdrawDialog(finalTotalIncome);
+            }
+        });
+    }
+    
+    private void showWithdrawDialog(int balance) {
+        Dialog<ButtonType> withdrawDialog = new Dialog<>();
+        withdrawDialog.setTitle("Withdraw Balance");
+        withdrawDialog.setHeaderText("💳 Withdraw ৳" + balance);
+        
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        
+        Label methodLabel = new Label("Select Withdrawal Method:");
+        methodLabel.setStyle("-fx-font-weight: bold;");
+        
+        ComboBox<String> methodCombo = new ComboBox<>();
+        methodCombo.getItems().addAll("Bank Account", "Bkash", "Nagad");
+        methodCombo.setValue("Bkash");
+        methodCombo.setStyle("-fx-pref-width: 200;");
+        
+        Label accountLabel = new Label("Account Number:");
+        accountLabel.setStyle("-fx-font-weight: bold;");
+        
+        TextField accountField = new TextField();
+        accountField.setPromptText("Enter account number");
+        accountField.setStyle("-fx-pref-width: 200;");
+        
+        content.getChildren().addAll(methodLabel, methodCombo, accountLabel, accountField);
+        
+        withdrawDialog.getDialogPane().setContent(content);
+        withdrawDialog.getDialogPane().setPrefWidth(350);
+        
+        ButtonType getOtpBtn = new ButtonType("Get OTP", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        withdrawDialog.getDialogPane().getButtonTypes().addAll(getOtpBtn, cancelBtn);
+        
+        withdrawDialog.showAndWait().ifPresent(response -> {
+            if (response == getOtpBtn) {
+                String method = methodCombo.getValue();
+                String account = accountField.getText().trim();
+                
+                if (account.isEmpty()) {
+                    showAlert("Error", "Missing Information", "Please enter account number.");
+                    return;
+                }
+                
+                String generatedOtp = String.valueOf((int)(Math.random() * 900000) + 100000);
+                showOtpVerificationDialog(balance, method, account, generatedOtp);
+            }
+        });
+    }
+    
+    private void showOtpVerificationDialog(int balance, String method, String account, String generatedOtp) {
+        showAlert("OTP Sent", "📩 OTP Sent to " + account, "Your OTP is: " + generatedOtp + "\n\nPlease use this OTP to complete the withdrawal.");
+        
+        Dialog<ButtonType> otpDialog = new Dialog<>();
+        otpDialog.setTitle("Verify OTP");
+        otpDialog.setHeaderText("🔐 Enter OTP to Withdraw ৳" + balance);
+        
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        
+        Label infoLabel = new Label("Method: " + method + "\nAccount: " + account);
+        infoLabel.setStyle("-fx-font-size: 12;");
+        
+        Label otpLabel = new Label("Enter OTP:");
+        otpLabel.setStyle("-fx-font-weight: bold;");
+        
+        TextField otpField = new TextField();
+        otpField.setPromptText("Enter 6-digit OTP");
+        otpField.setStyle("-fx-pref-width: 200;");
+        
+        content.getChildren().addAll(infoLabel, otpLabel, otpField);
+        
+        otpDialog.getDialogPane().setContent(content);
+        otpDialog.getDialogPane().setPrefWidth(350);
+        
+        ButtonType confirmBtn = new ButtonType("Confirm Withdraw", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        otpDialog.getDialogPane().getButtonTypes().addAll(confirmBtn, cancelBtn);
+        
+        otpDialog.showAndWait().ifPresent(response -> {
+            if (response == confirmBtn) {
+                String enteredOtp = otpField.getText().trim();
+                
+                if (enteredOtp.isEmpty()) {
+                    showAlert("Error", "Missing OTP", "Please enter the OTP.");
+                    return;
+                }
+                
+                if (!enteredOtp.equals(generatedOtp)) {
+                    showAlert("Error", "Invalid OTP", "The OTP you entered is incorrect. Please try again.");
+                    return;
+                }
+                
+                showAlert("Withdrawal Successful", "✅ Withdrawal Complete", 
+                        "Successfully withdrawn ৳" + balance + "\n\n" +
+                        "Method: " + method + "\n" +
+                        "Account: " + account + "\n\n" +
+                        "The amount will be transferred within 24 hours.");
+            }
+        });
     }
 
     @FXML

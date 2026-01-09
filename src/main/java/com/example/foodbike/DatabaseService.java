@@ -26,6 +26,15 @@ public class DatabaseService {
         adminActions = new HashMap<>();
         reviews = new HashMap<>();
         loadDataFromFiles();
+        
+        if (needsDistrictUpdate()) {
+            restaurants.clear();
+            File restaurantsFile = new File(RESTAURANTS_FILE);
+            if (restaurantsFile.exists()) {
+                restaurantsFile.delete();
+            }
+        }
+        
         if (users.isEmpty()) {
             initializeSampleData();
             saveDataToFiles();
@@ -46,7 +55,7 @@ public class DatabaseService {
             }
         }
 
-        if (restaurants.size() < 100 || shouldReinitializeDefaultRestaurants()) {
+        if (restaurants.size() < 256 || shouldReinitializeDefaultRestaurants() || needsDistrictUpdate()) {
             initializeRestaurants();
             restaurants.putAll(preservedRestaurants);
             
@@ -81,7 +90,7 @@ public class DatabaseService {
                     String restaurantId = String.format("%s%03d", prefix, count + 1);
                     
                     Restaurant restaurant = new Restaurant(restaurantId, app.getRestaurantName(), 
-                                                          app.getDivision(), app.getAddress());
+                                                          app.getDivision(), app.getDistrict(), app.getAddress());
                     restaurant.setRating(app.getRating());
                     
                     for (MenuItem item : app.getMenuItems()) {
@@ -103,6 +112,34 @@ public class DatabaseService {
                 return true;
             }
         }
+        return false;
+    }
+
+    private boolean needsDistrictUpdate() {
+        for (Restaurant r : restaurants.values()) {
+            if (r.getDistrict() == null || r.getDistrict().isEmpty()) {
+                return true;
+            }
+        }
+        
+        // Check if any district has fewer than 4 restaurants
+        Map<String, Integer> districtCounts = new HashMap<>();
+        for (Restaurant r : restaurants.values()) {
+            String district = r.getDistrict();
+            if (district != null && !district.isEmpty()) {
+                districtCounts.put(district, districtCounts.getOrDefault(district, 0) + 1);
+            }
+        }
+        
+        for (List<String> districts : getDivisionDistrictsMap().values()) {
+            for (String district : districts) {
+                int count = districtCounts.getOrDefault(district, 0);
+                if (count < 4) {
+                    return true;
+                }
+            }
+        }
+        
         return false;
     }
 
@@ -232,7 +269,16 @@ public class DatabaseService {
     }
 
     private void initializeRestaurants() {
-        String[] divisions = {"Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh"};
+        Map<String, List<String>> divisionDistricts = new HashMap<>();
+        divisionDistricts.put("Dhaka", Arrays.asList("Dhaka", "Gazipur", "Narayanganj", "Tangail", "Munshiganj", "Manikganj", "Narsingdi", "Faridpur", "Rajbari", "Gopalganj", "Madaripur", "Shariatpur", "Kishoreganj"));
+        divisionDistricts.put("Chittagong", Arrays.asList("Chittagong", "Cox's Bazar", "Comilla", "Feni", "Brahmanbaria", "Rangamati", "Noakhali", "Chandpur", "Lakshmipur", "Bandarban", "Khagrachari"));
+        divisionDistricts.put("Sylhet", Arrays.asList("Sylhet", "Moulvibazar", "Habiganj", "Sunamganj"));
+        divisionDistricts.put("Rajshahi", Arrays.asList("Rajshahi", "Bogra", "Pabna", "Natore", "Sirajganj", "Naogaon", "Chapainawabganj", "Joypurhat"));
+        divisionDistricts.put("Khulna", Arrays.asList("Khulna", "Jessore", "Satkhira", "Bagerhat", "Jhenaidah", "Magura", "Narail", "Kushtia", "Chuadanga", "Meherpur"));
+        divisionDistricts.put("Barisal", Arrays.asList("Barisal", "Patuakhali", "Bhola", "Pirojpur", "Jhalokati", "Barguna"));
+        divisionDistricts.put("Rangpur", Arrays.asList("Rangpur", "Dinajpur", "Lalmonirhat", "Nilphamari", "Gaibandha", "Thakurgaon", "Panchagarh", "Kurigram"));
+        divisionDistricts.put("Mymensingh", Arrays.asList("Mymensingh", "Jamalpur", "Netrokona", "Sherpur"));
+
         Map<String, String> divisionPrefixes = new HashMap<>();
         divisionPrefixes.put("Dhaka", "DH");
         divisionPrefixes.put("Chittagong", "CH");
@@ -264,33 +310,46 @@ public class DatabaseService {
                                     "Juice Junction", "Lassi Bar", "Smoothie Corner", "Borhani Bazar", "Drink Depot",
                                     "Vegetarian Villa", "Green Plate", "Salad Bowl", "Healthy Eats", "Organic Oasis"};
 
-
-        Map<String, Integer> divisionCount = new HashMap<>();
+        String[] divisions = {"Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh"};
+        
         int restaurantId = 1;
-        for (int i = 0; i < 100; i++) {
-            String name = restaurantNames[i % restaurantNames.length];
-            if (i >= restaurantNames.length) {
-                name = name + " " + (i / restaurantNames.length);
-            }
-            String division = divisions[i % divisions.length];
-
-            int count = divisionCount.getOrDefault(division, 0) + 1;
-            divisionCount.put(division, count);
+        int nameIndex = 0;
+        
+        for (String division : divisions) {
+            List<String> districts = divisionDistricts.get(division);
             String prefix = divisionPrefixes.get(division);
-            String restaurantIdStr = String.format("%s%03d", prefix, count);
+            int divisionCount = 0;
             
-            Restaurant restaurant = new Restaurant(restaurantIdStr, name, division, "Address " + restaurantId + ", " + division);
+            for (String district : districts) {
+                for (int j = 0; j < 4; j++) {
+                    divisionCount++;
+                    
+                    String name = restaurantNames[nameIndex % restaurantNames.length];
+                    if (nameIndex >= restaurantNames.length) {
+                        name = name + " " + (nameIndex / restaurantNames.length);
+                    }
+                    nameIndex++;
+                    
+                    String[] areaNames = {"Shadar Road", "Station Road", "College Road", "Market Area", "City Center", "Sadar", "Pourashava", "Bypass Road", "Main Road", "Upazila Road"};
+                    String areaName = areaNames[restaurantId % areaNames.length];
+                    String address = areaName + ", " + district;
+                    
+                    String restaurantIdStr = String.format("%s%03d", prefix, divisionCount);
+                    
+                    Restaurant restaurant = new Restaurant(restaurantIdStr, name, division, district, address);
 
-            double randomRating = 1.0 + Math.random() * 4.0; // Round to 1 decimal place
-            randomRating = Math.round(randomRating * 10) / 10.0;
-            restaurant.setRating(randomRating);
-            restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_1", "Special Combo", "Our signature dish", 250));
-            restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_2", "Deluxe Meal", "Premium items", 350));
-            restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_3", "Basic Meal", "Standard items", 150));
-            restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_4", "Beverage", "Drinks and juices", 50));
-            
-            restaurants.put(restaurantIdStr, restaurant);
-            restaurantId++;
+                    double randomRating = 3.5 + Math.random() * 1.5;
+                    randomRating = Math.round(randomRating * 10) / 10.0;
+                    restaurant.setRating(randomRating);
+                    restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_1", "Special Combo", "Our signature dish", 250));
+                    restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_2", "Deluxe Meal", "Premium items", 350));
+                    restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_3", "Basic Meal", "Standard items", 150));
+                    restaurant.addMenuItem(new MenuItem("item_" + restaurantId + "_4", "Beverage", "Drinks and juices", 50));
+                    
+                    restaurants.put(restaurantIdStr, restaurant);
+                    restaurantId++;
+                }
+            }
         }
     }
 
@@ -327,7 +386,10 @@ public class DatabaseService {
     public List<Restaurant> searchRestaurants(String query) {
         List<Restaurant> results = new ArrayList<>();
         for (Restaurant restaurant : restaurants.values()) {
-            if (restaurant.getName().toLowerCase().contains(query.toLowerCase())) {
+            if (restaurant.getName().toLowerCase().contains(query.toLowerCase()) ||
+                (restaurant.getDistrict() != null && restaurant.getDistrict().toLowerCase().contains(query.toLowerCase())) ||
+                restaurant.getDivision().toLowerCase().contains(query.toLowerCase()) ||
+                restaurant.getAddress().toLowerCase().contains(query.toLowerCase())) {
                 results.add(restaurant);
             }
         }
@@ -338,6 +400,16 @@ public class DatabaseService {
         List<Restaurant> results = new ArrayList<>();
         for (Restaurant restaurant : restaurants.values()) {
             if (restaurant.getDivision().equalsIgnoreCase(division)) {
+                results.add(restaurant);
+            }
+        }
+        return results;
+    }
+
+    public List<Restaurant> getRestaurantsByDistrict(String district) {
+        List<Restaurant> results = new ArrayList<>();
+        for (Restaurant restaurant : restaurants.values()) {
+            if (restaurant.getDistrict() != null && restaurant.getDistrict().equalsIgnoreCase(district)) {
                 results.add(restaurant);
             }
         }
@@ -373,6 +445,31 @@ public class DatabaseService {
         List<String> divisions = new ArrayList<>(divisionsSet);
         Collections.sort(divisions);
         return divisions;
+    }
+
+    public List<String> getAllDistricts() {
+        Set<String> districtsSet = new HashSet<>();
+        for (Restaurant restaurant : restaurants.values()) {
+            if (restaurant.getDistrict() != null) {
+                districtsSet.add(restaurant.getDistrict());
+            }
+        }
+        List<String> districts = new ArrayList<>(districtsSet);
+        Collections.sort(districts);
+        return districts;
+    }
+
+    public Map<String, List<String>> getDivisionDistrictsMap() {
+        Map<String, List<String>> divisionDistricts = new HashMap<>();
+        divisionDistricts.put("Dhaka", Arrays.asList("Dhaka", "Gazipur", "Narayanganj", "Tangail", "Munshiganj", "Manikganj", "Narsingdi", "Faridpur", "Rajbari", "Gopalganj", "Madaripur", "Shariatpur", "Kishoreganj"));
+        divisionDistricts.put("Chittagong", Arrays.asList("Chittagong", "Cox's Bazar", "Comilla", "Feni", "Brahmanbaria", "Rangamati", "Noakhali", "Chandpur", "Lakshmipur", "Bandarban", "Khagrachari"));
+        divisionDistricts.put("Sylhet", Arrays.asList("Sylhet", "Moulvibazar", "Habiganj", "Sunamganj"));
+        divisionDistricts.put("Rajshahi", Arrays.asList("Rajshahi", "Bogra", "Pabna", "Natore", "Sirajganj", "Naogaon", "Chapainawabganj", "Joypurhat"));
+        divisionDistricts.put("Khulna", Arrays.asList("Khulna", "Jessore", "Satkhira", "Bagerhat", "Jhenaidah", "Magura", "Narail", "Kushtia", "Chuadanga", "Meherpur"));
+        divisionDistricts.put("Barisal", Arrays.asList("Barisal", "Patuakhali", "Bhola", "Pirojpur", "Jhalokati", "Barguna"));
+        divisionDistricts.put("Rangpur", Arrays.asList("Rangpur", "Dinajpur", "Lalmonirhat", "Nilphamari", "Gaibandha", "Thakurgaon", "Panchagarh", "Kurigram"));
+        divisionDistricts.put("Mymensingh", Arrays.asList("Mymensingh", "Jamalpur", "Netrokona", "Sherpur"));
+        return divisionDistricts;
     }
 
     public void createOrder(Order order) {

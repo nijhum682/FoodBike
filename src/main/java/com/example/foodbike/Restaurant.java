@@ -7,13 +7,15 @@ public class Restaurant implements Serializable {
     private String id;
     private String name;
     private String division;
+    private String district;
     private String address;
     private List<MenuItem> menu;
     private double rating;
-    public Restaurant(String id, String name, String division, String address) {
+    public Restaurant(String id, String name, String division, String district, String address) {
         this.id = id;
         this.name = name;
         this.division = division;
+        this.district = district;
         this.address = address;
         this.menu = new ArrayList<>();
         this.rating = 4.5;
@@ -37,6 +39,12 @@ public class Restaurant implements Serializable {
     public void setDivision(String division) {
         this.division = division;
     }
+    public String getDistrict() {
+        return district;
+    }
+    public void setDistrict(String district) {
+        this.district = district;
+    }
     public String getAddress() {
         return address;
     }
@@ -58,6 +66,6 @@ public class Restaurant implements Serializable {
 
     @Override
     public String toString() {
-        return name + " - " + division + " (" + rating + "★)";
+        return name + " (" + district + ", " + division + ")";
     }
 }
