@@ -188,40 +188,46 @@ public class EntrepreneurController {
     private void displayRestaurantInfo(Restaurant restaurant) {
         restaurantInfoBox.setVisible(true);
         restaurantInfoBox.setManaged(true);
-        
+
         HBox headerBox = new HBox();
         headerBox.setStyle("-fx-alignment: center-left;");
-        
+
         Label titleLabel = new Label("My Restaurant");
         titleLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #27ae60;");
-        
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
+
         Button totalBalanceBtn = new Button("Total Balance");
         totalBalanceBtn.setStyle("-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #f39c12; -fx-text-fill: white; -fx-border-radius: 4;");
         totalBalanceBtn.setOnAction(e -> handleTotalBalance());
-        
-        headerBox.getChildren().addAll(titleLabel, spacer, totalBalanceBtn);
-        
+
+        // Add Menu Item button for entrepreneurs
+        Button addMenuItemBtn = new Button("+ Add Menu Item");
+        addMenuItemBtn.setStyle("-fx-padding: 8 15; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 4;");
+        addMenuItemBtn.setOnAction(e -> handleAddMenuItem());
+
+        headerBox.getChildren().addAll(titleLabel, spacer, totalBalanceBtn, addMenuItemBtn);
+
         VBox infoCard = new VBox(8);
         infoCard.setStyle("-fx-border-color: #27ae60; -fx-border-width: 2; -fx-border-radius: 6; -fx-padding: 15; -fx-background-color: #d4edda; -fx-alignment: center;");
-        
+
         Label nameLabel = new Label("✓ " + restaurant.getName());
         nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 18; -fx-text-fill: #155724;");
-        
+
         Label locationLabel = new Label("📍 " + restaurant.getDistrict() + ", " + restaurant.getDivision() + " - " + restaurant.getAddress());
         locationLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #155724;");
-        
+
         Label ratingLabel = new Label("⭐ Rating: " + restaurant.getRating() + "/5.0");
         ratingLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #155724; -fx-font-weight: bold;");
-        
+
         Label idLabel = new Label("ID: " + restaurant.getId());
         idLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #6c757d; -fx-font-style: italic;");
-        
+
         infoCard.getChildren().addAll(nameLabel, locationLabel, ratingLabel, idLabel);
+        restaurantInfoBox.getChildren().clear();
         restaurantInfoBox.getChildren().addAll(headerBox, infoCard);
-        
+
         if (restaurantNameLabel != null) {
             restaurantNameLabel.setText("My Restaurant: " + restaurant.getName());
         }
